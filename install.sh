@@ -5,6 +5,7 @@ set -euo pipefail
 # 1. လိုအပ်သောဖိုင်များ ဒေါင်းလုဒ်ဆွဲခြင်း (VPN Core)
 # VPN Core ကို ဒေါင်းလုဒ်ဆွဲခြင်း
 # ဒီလင့်ခ်ကို စမ်းထည့်ကြည့်ပါ
+# ဤစာကြောင်းဖြင့် အစားထိုးပါ
 wget -O /usr/local/bin/zivpn https://github.com/zivpn/zivpn/releases/latest/download/zivpn-linux-amd64
 
 # 2. Login အချက်အလက်သတ်မှတ်ခြင်း
