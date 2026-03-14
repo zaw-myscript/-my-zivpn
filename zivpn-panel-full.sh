@@ -1120,7 +1120,7 @@ text {
                         <p><i class="icon">🔑</i> Password: <b>${data.password}</b></p>
                         <p><i class="icon">⏰</i> Expires: <b>${data.expires || 'N/A'}</b></p>                   
                     `;
-                }
+              }
                 
                 document.body.appendChild(card);
                 
