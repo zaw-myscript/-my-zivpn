@@ -1,5 +1,5 @@
 #!/bin/bash
-# ZIVPN UDP Server + Web UI (Myanmar) - Login IP Position & Nav Icon FIX + Expiry Logic Update + Status FIX + PASSWORD & EXPIRY EDIT FEATURE
+# ZIVPN UDP Server + Web UI (Myanmar) - Login IP Position & Nav Icon FIX + Expiry Logic Update + Status FIX + PASSWORD & EXPIRY EDIT FEATURE + LOGOUT FIX
 set -euo pipefail
 
 # ===== Pretty (CLEANED UP) =====
@@ -472,9 +472,8 @@ tr.expiring-soon { border-left: 5px solid var(--warning); background-color: rgba
         </a>
     </nav>
 
-
-{% endif %}
-</body></html>"""
+</body></html>
+WRAPPER_HTML
 
 # 💡 Web Panel (Flask - web.py) (MODIFIED FOR EXPIRY EDIT)
 echo -e "${Y}🖥️ Web Panel (web.py) ကို စစ်ဆေးနေပါတယ်...${Z}"
@@ -654,28 +653,15 @@ text { font-size: 15px; margin-Top: 0px; }
         </div>
         <div class="input-group">
             <label><i class="icon"></i>Server IP (Click to Copy)</label> 
-            <div class="input-field-wrapper"><i class="icon">📡</i><input name="ip" id="server-ip-input" placeholder="ip" value="{{ IP }}" readonly onclick="copyToClipboard('server-ip-input')">
-            </div>
+            <div class="input-field-wrapper"><i class="icon">📡</i><input name="ip" id="server-ip-input" placeholder="ip" value="{{ IP }}" readonly onclick="copyToClipboard('server-ip-input')"></div>
         </div>
-
         <button class="save-btn" type="submit">Create Account</button>
     </form>
     </div> <nav class="bottom-nav">
-        <a href="/">
-            <i class="icon">➕</i>
-            <span>အကောင့်ထည့်ရန်</span>
-        </a>
-        <a href="/users">
-            <i class="icon">📜</i>
-            <span>အသုံးပြုသူ စာရင်း</span>
-        </a>
-        <a href="/logout">
-            <i class="icon">➡️</i>
-            <span>ထွက်ရန်</span>
-        </a>
+        <a href="/"><i class="icon">➕</i><span>အကောင့်ထည့်ရန်</span></a>
+        <a href="/users"><i class="icon">📜</i><span>အသုံးပြုသူ စာရင်း</span></a>
+        <a href="/logout"><i class="icon">➡️</i><span>ထွက်ရန်</span></a>
     </nav>
-
-
 {% endif %}
 </body></html>"""
 
@@ -947,6 +933,12 @@ def delete_user_html():
     return redirect(url_for('users_table_view'))
   delete_user(user) 
   return redirect(url_for('users_table_view'))
+
+# 💡 LOGOUT ROUTE ADDED HERE (This fixes the white screen bug and prevents unauthorized access)
+@app.route("/logout", methods=["GET"])
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 @app.errorhandler(405)
 def handle_405(e): return redirect(url_for('index'))
