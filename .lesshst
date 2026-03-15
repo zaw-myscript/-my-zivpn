@@ -472,8 +472,9 @@ tr.expiring-soon { border-left: 5px solid var(--warning); background-color: rgba
         </a>
     </nav>
 
-</body></html>
-WRAPPER_HTML
+
+{% endif %}
+</body></html>"""
 
 # 💡 Web Panel (Flask - web.py) (MODIFIED FOR EXPIRY EDIT)
 echo -e "${Y}🖥️ Web Panel (web.py) ကို စစ်ဆေးနေပါတယ်...${Z}"
@@ -653,15 +654,28 @@ text { font-size: 15px; margin-Top: 0px; }
         </div>
         <div class="input-group">
             <label><i class="icon"></i>Server IP (Click to Copy)</label> 
-            <div class="input-field-wrapper"><i class="icon">📡</i><input name="ip" id="server-ip-input" placeholder="ip" value="{{ IP }}" readonly onclick="copyToClipboard('server-ip-input')"></div>
+            <div class="input-field-wrapper"><i class="icon">📡</i><input name="ip" id="server-ip-input" placeholder="ip" value="{{ IP }}" readonly onclick="copyToClipboard('server-ip-input')">
+            </div>
         </div>
+
         <button class="save-btn" type="submit">Create Account</button>
     </form>
     </div> <nav class="bottom-nav">
-        <a href="/"><i class="icon">➕</i><span>အကောင့်ထည့်ရန်</span></a>
-        <a href="/users"><i class="icon">📜</i><span>အသုံးပြုသူ စာရင်း</span></a>
-        <a href="/logout"><i class="icon">➡️</i><span>ထွက်ရန်</span></a>
+        <a href="/">
+            <i class="icon">➕</i>
+            <span>အကောင့်ထည့်ရန်</span>
+        </a>
+        <a href="/users">
+            <i class="icon">📜</i>
+            <span>အသုံးပြုသူ စာရင်း</span>
+        </a>
+        <a href="/logout">
+            <i class="icon">➡️</i>
+            <span>ထွက်ရန်</span>
+        </a>
     </nav>
+
+
 {% endif %}
 </body></html>"""
 
