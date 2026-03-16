@@ -168,7 +168,7 @@ NoNewPrivileges=true
 WantedBy=multi-user.target
 EOF
 
-# 💡 Mobile Friendly: users_table.html (MODIFIED WITH EXPIRY EDIT)
+# 💡 Mobile Friendly: users_table.html
 echo -e "${Y}📄 Table HTML (users_table.html) ကို စစ်ဆေးနေပါတယ်...${Z}"
 cat >"$TEMPLATES_DIR/users_table.html" <<'TABLE_HTML'
 <div class="table-container">
@@ -276,17 +276,17 @@ cat >"$TEMPLATES_DIR/users_table.html" <<'TABLE_HTML'
 </div>
 
 <style>
-/* MODAL UI UPDATE START */
+/* MODAL UI UPDATE START (DARK THEME) */
 .modal-content {
   background-color: var(--card-bg); 
   margin: 15% auto; 
   padding: 25px; 
-  border: none; 
+  border: 1px solid var(--border-color); 
   width: 90%; 
   max-width: 320px; 
   border-radius: 12px;
   position: relative;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+  box-shadow: 0 10px 35px rgba(0,0,0,0.6); 
 }
 .close-btn { 
   color: var(--secondary); 
@@ -297,24 +297,25 @@ cat >"$TEMPLATES_DIR/users_table.html" <<'TABLE_HTML'
   font-weight: 300; 
   transition: color 0.2s;
   line-height: 1; 
+  cursor: pointer;
 }
 .close-btn:hover { color: var(--danger); }
-.section-title { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); color: var(--primary-dark);}
+.section-title { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); color: var(--primary);}
 
 .modal .input-group { margin-bottom: 20px; }
-.modal .input-label { display: block; text-align: left; font-weight: 600; color: var(--dark); font-size: 0.9em; margin-bottom: 5px; }
-.modal .input-field-wrapper { display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; background-color: #fff; transition: border-color 0.3s, box-shadow 0.3s; }
-.modal .input-field-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 127, 39, 0.25); }
-.modal .input-field-wrapper.is-readonly { background-color: var(--light); border: 1px solid #ddd; }
-.modal .input-field-wrapper input { width: 100%; padding: 12px 10px; border: none; border-radius: 8px; font-size: 16px; outline: none; background: transparent; }
+.modal .input-label { display: block; text-align: left; font-weight: 600; color: #fff; font-size: 0.9em; margin-bottom: 5px; }
+.modal .input-field-wrapper { display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-color); transition: all 0.3s; }
+.modal .input-field-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2); }
+.modal .input-field-wrapper.is-readonly { background-color: var(--light); opacity: 0.8; }
+.modal .input-field-wrapper input { width: 100%; padding: 12px 10px; border: none; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #fff; }
 .modal .input-hint { margin-top: 5px; text-align: left; font-size: 0.75em; color: var(--secondary); line-height: 1.4; padding-left: 5px; }
 
-.modal-save-btn { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1.0em; cursor: pointer; transition: background-color 0.3s, transform 0.1s; margin-top: 10px; font-weight: bold; box-shadow: 0 4px 6px rgba(255, 127, 39, 0.3); }
-.modal-save-btn:hover { background-color: var(--primary-dark); } 
-.modal-save-btn:active { background-color: var(--primary-dark); transform: translateY(1px); box-shadow: 0 2px 4px rgba(255, 127, 39, 0.3); }
+.modal-save-btn { width: 100%; padding: 12px; background-color: var(--primary); color: #121212; border: none; border-radius: 8px; font-size: 1.0em; cursor: pointer; transition: all 0.3s; margin-top: 10px; font-weight: bold; }
+.modal-save-btn:hover { background-color: var(--primary-dark); color: #fff; } 
+.modal-save-btn:active { transform: translateY(1px); }
 
-.btn-edit { background-color: var(--warning); color: var(--dark); border: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s; margin-right: 5px; }
-.btn-edit:hover { background-color: #e0ac08; }
+.btn-edit { background-color: rgba(255, 213, 79, 0.15); color: var(--warning); border: 1px solid rgba(255, 213, 79, 0.3); padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.2s; margin-right: 5px; }
+.btn-edit:hover { background-color: var(--warning); color: #121212; }
 .delform { display: inline-block; margin: 0; }
 .btn-delete { padding: 6px 10px; font-size: 0.9em; } 
 
@@ -351,7 +352,7 @@ cat >"$TEMPLATES_DIR/users_table.html" <<'TABLE_HTML'
 </script>
 TABLE_HTML
 
-# 💡 Mobile Friendly: users_table_wrapper.html (UNCHANGED)
+# 💡 Mobile Friendly: users_table_wrapper.html 
 echo -e "${Y}📄 Table Wrapper (users_table_wrapper.html) ကို စစ်ဆေးနေပါတယ်...${Z}"
 cat >"$TEMPLATES_DIR/users_table_wrapper.html" <<'WRAPPER_HTML'
 <!doctype html>
@@ -360,17 +361,20 @@ cat >"$TEMPLATES_DIR/users_table_wrapper.html" <<'WRAPPER_HTML'
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="refresh" content="120">
 <style>
-/* Global Styles for Mobile UI */
+/* Global Styles for Mobile UI (DARK THEME) */
 :root {
-    --primary: #ff7f27;
-    --primary-dark: #cc661f; 
-    --secondary: #6c757d; --success: #28a745; --danger: #dc3545;
-    --light: #f8f9fa; --dark: #343a40; 
-    --bg-color: #f0f2f5; 
-    --card-bg: #ffffff;
-    --border-color: #dee2e6;
-    --warning: #ffc107;
-    --warning-bg: #fff3cd;
+    --primary: #ff9800;
+    --primary-dark: #f57c00; 
+    --secondary: #9e9e9e; 
+    --success: #00e676; 
+    --danger: #ff5252;
+    --light: #2a2a2a; 
+    --dark: #e0e0e0; 
+    --bg-color: #121212; 
+    --card-bg: #1e1e1e;
+    --border-color: #333333;
+    --warning: #ffd54f;
+    --warning-bg: rgba(255, 213, 79, 0.15);
 }
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color);
@@ -379,30 +383,31 @@ body {
 }
 .icon { font-style: normal; margin-right: 5px; }
 
-.main-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 15px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; }
+.main-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); border-bottom: 1px solid var(--border-color); margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; }
 .header-logo a { font-size: 1.6em; font-weight: bold; color: var(--primary); text-decoration: none;}
-.header-logo .highlight { color: var(--dark); }
+.header-logo .highlight { color: #fff; }
 
-.bottom-nav { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--card-bg); box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 5px 0; }
+.bottom-nav { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(30, 30, 30, 0.9); backdrop-filter: blur(10px); box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.5); border-top: 1px solid var(--border-color); z-index: 1000; padding: 5px 0; }
 .bottom-nav a { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--secondary); font-size: 0.75em; padding: 8px; border-radius: 6px; transition: color 0.2s, background-color 0.2s; min-width: 80px; }
 .bottom-nav a:hover, .bottom-nav a.active { color: var(--primary); }
-.bottom-nav a i.icon { font-size: 1.2em; margin-right: 0; margin-bottom: 3px; color: #ffd966; }
-.bottom-nav a:hover i.icon, .bottom-nav a.active i.icon { color: var(--primary); }
+.bottom-nav a i.icon { font-size: 1.2em; margin-right: 0; margin-bottom: 3px; color: #ffd966; filter: drop-shadow(0 0 2px rgba(255, 217, 102, 0.5));}
+.bottom-nav a:hover i.icon, .bottom-nav a.active i.icon { color: var(--primary); filter: drop-shadow(0 0 5px rgba(255, 152, 0, 0.5));}
 
 .table-container { padding: 0 10px; margin: 0 auto; max-width: 100%; } 
-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border-radius: 8px; overflow: hidden; }
-th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.9em; }
-th { background-color: var(--primary); color: white; font-weight: 600; text-transform: uppercase; font-size: 0.8em; } 
+table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; background-color: var(--card-bg); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);}
+th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.9em; color: var(--dark);}
+th { background-color: #252525; color: var(--primary); font-weight: 600; text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px;} 
 tr:last-child td { border-bottom: none; }
-tr:nth-child(even) { background-color: var(--light); }
-tr:hover { background-color: #e9ecef; }
+tr:nth-child(even) { background-color: #1a1a1a; }
+tr:hover { background-color: #2c2c2c; }
 
 @media (max-width: 768px) {
     .table-container { padding: 0 5px; }
-    table, thead, tbody, th, td, tr { display: block; }
+    table, thead, tbody, th, td, tr { display: block; border: none;}
+    table { background-color: transparent; box-shadow: none;}
     thead { display: none; } 
-    tr { border: 1px solid var(--border-color); margin-bottom: 15px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); }
-    td { border: none; position: relative; padding-left: 45%; text-align: right; border-bottom: 1px dashed #e0e0e0; }
+    tr { background-color: var(--card-bg) !important; border: 1px solid var(--border-color); margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+    td { border: none; position: relative; padding-left: 45%; text-align: right; border-bottom: 1px dashed var(--border-color); }
     td:last-child { border-bottom: none; }
     td:before { content: attr(data-label); position: absolute; left: 0; width: 40%; padding-left: 10px; font-weight: bold; text-align: left; color: var(--secondary); font-size: 0.9em; }
     .pill { padding: 4px 8px; font-size: 0.8em; min-width: 70px; }
@@ -415,31 +420,20 @@ tr:hover { background-color: #e9ecef; }
 @media (min-width: 769px) { .bottom-nav { display: none; } body { padding-bottom: 0; } }
 
 .pill { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold; min-width: 90px; justify-content: center;}
-.ok { background-color: #d4edda; color: var(--success); } 
-.pill-expired { background-color: #f0f0f0; color: var(--danger); }
-.pill-expiring { background-color: var(--warning-bg); color: var(--warning); } 
+.ok { background-color: rgba(0, 230, 118, 0.15); color: var(--success); border: 1px solid rgba(0, 230, 118, 0.3);} 
+.pill-expired { background-color: rgba(255, 82, 82, 0.15); color: var(--danger); border: 1px solid rgba(255, 82, 82, 0.3);}
+.pill-expiring { background-color: var(--warning-bg); color: var(--warning); border: 1px solid rgba(255, 213, 79, 0.3);} 
 .text-expiring { color: var(--warning); font-weight: bold; } 
 .days-remaining { font-size: 0.85em; color: var(--secondary); font-weight: 500; display: inline-block; margin-top: 2px; }
 .days-remaining .text-expiring { font-weight: bold; }
-tr.expired td { opacity: 0.6; text-decoration-color: var(--danger); }
-tr.expiring-soon { border-left: 5px solid var(--warning); background-color: rgba(255, 193, 7, 0.1); } 
+tr.expired td { opacity: 0.5; text-decoration-color: var(--danger); }
+tr.expiring-soon { border-left: 4px solid var(--warning); } 
 
-.btn-delete { background-color: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s;}
-.btn-delete:hover { background-color: #c82333; }
+.btn-delete { background-color: rgba(255, 82, 82, 0.15); color: var(--danger); border: 1px solid rgba(255, 82, 82, 0.3); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;}
+.btn-delete:hover { background-color: var(--danger); color: #fff;}
 
-.modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
-.modal-content { background-color: var(--card-bg); margin: 15% auto; padding: 25px; border: none; width: 90%; max-width: 320px; border-radius: 12px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-.close-btn { color: var(--secondary); position: absolute; top: 8px; right: 15px; font-size: 32px; font-weight: 300; line-height: 1; }
-.close-btn:hover { color: var(--danger); }
-.btn-edit { background-color: var(--warning); color: var(--dark); border: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s; margin-right: 5px; }
-.modal .input-label { display: block; text-align: left; font-weight: 600; color: var(--dark); font-size: 0.9em; margin-bottom: 5px; }
-.modal .input-field-wrapper { display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; background-color: #fff; }
-.modal .input-field-wrapper.is-readonly { background-color: var(--light); border: 1px solid #ddd; }
-.modal .input-field-wrapper input { width: 100%; padding: 12px 10px; border: none; border-radius: 8px; font-size: 16px; outline: none; background: transparent; }
-.modal .input-hint { margin-top: 5px; text-align: left; font-size: 0.75em; color: var(--secondary); line-height: 1.4; padding-left: 5px; }
-.modal-save-btn { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1.0em; cursor: pointer; transition: background-color 0.3s; margin-top: 10px; font-weight: bold; }
-.modal-save-btn:hover { background-color: var(--primary-dark); } 
-
+.modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(3px);}
+/* Model CSS imported via users_table.html */
 </style>
 </head><body>
     
@@ -462,7 +456,7 @@ tr.expiring-soon { border-left: 5px solid var(--warning); background-color: rgba
             <i class="icon">➕</i>
             <span>အကောင့်ထည့်ရန်</span>
         </a>
-        <a href="/users">
+        <a href="/users" class="active">
             <i class="icon">📜</i>
             <span>အသုံးပြုသူ စာရင်း</span>
         </a>
@@ -475,7 +469,7 @@ tr.expiring-soon { border-left: 5px solid var(--warning); background-color: rgba
 </body></html>
 WRAPPER_HTML
 
-# 💡 Web Panel (Flask - web.py) (MODIFIED FOR EXPIRY EDIT)
+# 💡 Web Panel (Flask - web.py)
 echo -e "${Y}🖥️ Web Panel (web.py) ကို စစ်ဆေးနေပါတယ်...${Z}"
 cat >/etc/zivpn/web.py <<'PY'
 from flask import Flask, jsonify, render_template, render_template_string, request, redirect, url_for, session, make_response
@@ -500,7 +494,7 @@ def get_server_ip():
 SERVER_IP_FALLBACK = get_server_ip()
 CONTACT_LINK = os.environ.get("WEB_CONTACT_LINK", "").strip()
 
-# HTML Template (Truncated for brevity in python string, fully implemented above)
+# HTML Template (DARK THEME UI)
 HTML = """<!doctype html>
 <html lang="my"><head><meta charset="utf-8">
 <title>ZIVPN User Panel</title>
@@ -508,47 +502,47 @@ HTML = """<!doctype html>
 <meta http-equiv="refresh" content="120">
 <style>
 /* Global Styles */
-:root { --primary: #ff7f27; --primary-dark: #cc661f; --secondary: #6c757d; --success: #28a745; --danger: #dc3545; --light: #f8f9fa; --dark: #343a40; --bg-color: #f0f2f5; --card-bg: #ffffff; --border-color: #dee2e6; --warning: #ffc107; }
+:root { --primary: #ff9800; --primary-dark: #f57c00; --secondary: #9e9e9e; --success: #00e676; --danger: #ff5252; --light: #2a2a2a; --dark: #e0e0e0; --bg-color: #121212; --card-bg: #1e1e1e; --border-color: #333333; --warning: #ffd54f; }
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); line-height: 1.6; color: var(--dark); margin: 0; padding: 0; padding-bottom: 70px; }
 .icon { font-style: normal; margin-right: 5px; }
-.main-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 15px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; }
+.main-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); border-bottom: 1px solid var(--border-color); margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; }
 .header-logo a { font-size: 1.6em; font-weight: bold; color: var(--primary); text-decoration: none;} 
-.header-logo .highlight { color: var(--dark); }
-.bottom-nav { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--card-bg); box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 5px 0; }
+.header-logo .highlight { color: #fff; }
+.bottom-nav { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(30, 30, 30, 0.9); backdrop-filter: blur(10px); box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.5); border-top: 1px solid var(--border-color); z-index: 1000; padding: 5px 0; }
 .bottom-nav a { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--secondary); font-size: 0.75em; padding: 8px; border-radius: 6px; transition: color 0.2s, background-color 0.2s; min-width: 80px; }
 .bottom-nav a:hover, .bottom-nav a.active { color: var(--primary); }
-.bottom-nav a i.icon { font-size: 1.2em; margin-right: 0; margin-bottom: 3px; color: #ffd966; }
-.bottom-nav a:hover i.icon, .bottom-nav a.active i.icon { color: var(--primary); }
+.bottom-nav a i.icon { font-size: 1.2em; margin-right: 0; margin-bottom: 3px; color: #ffd966; filter: drop-shadow(0 0 2px rgba(255, 217, 102, 0.5));}
+.bottom-nav a:hover i.icon, .bottom-nav a.active i.icon { color: var(--primary); filter: drop-shadow(0 0 5px rgba(255, 152, 0, 0.5));}
 @media (min-width: 769px) { .bottom-nav { display: none; } body { padding-bottom: 0; } }
-.login-container, .boxa1 { background-color: var(--card-bg); padding: 30px 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); width: 90%; max-width: 400px; margin: 30px auto; text-align: center; }
+.login-container, .boxa1 { background-color: var(--card-bg); padding: 30px 20px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color); width: 90%; max-width: 400px; margin: 30px auto; text-align: center; }
 .boxa1 { max-width: 600px; margin-top: 15px; text-align: left; }
-.info-card { background-color: #fcece3; color: var(--primary-dark); padding: 15px 20px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.0em; margin-bottom: 15px; border: 1px solid var(--primary); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-.info-card span { font-size: 1.1em; margin-right: 5px; }
-.profile-image-container { display: inline-block; margin-bottom: 15px; border-radius: 50%; overflow: hidden; border: 4px solid var(--primary); }
+.info-card { background-color: rgba(255, 152, 0, 0.1); color: var(--primary); padding: 15px 20px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.0em; margin-bottom: 15px; border: 1px solid rgba(255, 152, 0, 0.3); box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); }
+.info-card span { font-size: 1.1em; margin-right: 5px; color: #fff;}
+.profile-image-container { display: inline-block; margin-bottom: 15px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); box-shadow: 0 0 15px rgba(255, 152, 0, 0.4);}
 .profile-image { width: 70px; height: 70px; object-fit: cover; display: block; }
-h1 { font-size: 22px; color: var(--dark); margin-bottom: 5px; }
+h1 { font-size: 22px; color: #fff; margin-bottom: 5px; }
 .panel-title { font-size: 14px; color: var(--secondary); margin-bottom: 25px; }
-.login-ip-display { font-size: 16px; color: var(--primary-dark); font-weight: bold; margin-top: -15px; margin-bottom: 25px; }
+.login-ip-display { font-size: 16px; color: var(--primary); font-weight: bold; margin-top: -15px; margin-bottom: 25px; }
 .input-group { margin-bottom: 15px; text-align: left; }
-.input-field-wrapper { display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; margin-Top: 5px; background-color: #fff; transition: border-color 0.3s, box-shadow 0.3s; }
-.input-field-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 127, 39, 0.25); }
+.input-field-wrapper { display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; margin-Top: 5px; background-color: var(--bg-color); transition: all 0.3s; }
+.input-field-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2); }
 .input-field-wrapper .icon { padding: 0 10px; color: var(--secondary); background: transparent; }
-input[type="text"], input[type="password"], input[name="expires"], input[name="port"], input[name="ip"] { width: 100%; padding: 12px 10px; border: none; border-radius: 0 8px 8px 0; font-size: 16px; outline: none; background: transparent; appearance: none; -webkit-appearance: none; }
-input[name="ip"] { background-color: var(--light); color: var(--secondary); cursor: pointer; }
-.login-button, .save-btn { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: background-color 0.3s; margin-top: 20px; font-weight: bold; }
-.login-button:hover, .save-btn:hover { background-color: var(--primary-dark); } 
-.login-button:active, .save-btn:active { background-color: var(--primary-dark); transform: translateY(1px); } 
-.section-title { font-size: 18px; font-weight: bold; color: var(--dark); margin-bottom: 15px; }
+input[type="text"], input[type="password"], input[name="expires"], input[name="port"], input[name="ip"] { width: 100%; padding: 12px 10px; border: none; border-radius: 0 8px 8px 0; font-size: 16px; outline: none; background: transparent; color: #fff; appearance: none; -webkit-appearance: none; }
+input[name="ip"] { background-color: #252525; color: var(--secondary); cursor: pointer; }
+.login-button, .save-btn { width: 100%; padding: 12px; background-color: var(--primary); color: #121212; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s; margin-top: 20px; font-weight: bold; }
+.login-button:hover, .save-btn:hover { background-color: var(--primary-dark); color: #fff;} 
+.login-button:active, .save-btn:active { transform: translateY(1px); } 
+.section-title { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 15px; }
 .row{display:flex;gap:15px;flex-wrap:wrap;margin-bottom: 5px;}
 .row>div{flex:1 1 100%;}
 @media (min-width: 600px) { .row>div{flex:1 1 220px;} }
-.err{ color: var(--danger); background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; text-align: center; }
-.user-info-card { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); z-index: 2000; max-width: 300px; width: 90%; text-align: left; }
-#copy-notification { position: fixed; top: 10px; right: 50%; transform: translateX(50%); background-color: var(--success); color: white; padding: 8px 15px; border-radius: 5px; z-index: 2000; font-size: 0.9em; opacity: 0; transition: opacity 0.5s; }
-text { font-size: 15px; margin-Top: 0px; }
+.err{ color: var(--danger); background-color: rgba(255, 82, 82, 0.15); border: 1px solid rgba(255, 82, 82, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; text-align: center; }
+.user-info-card { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: rgba(0, 230, 118, 0.15); color: var(--success); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 8px; padding: 15px 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); z-index: 2000; max-width: 300px; width: 90%; text-align: left; backdrop-filter: blur(5px);}
+#copy-notification { position: fixed; top: 10px; right: 50%; transform: translateX(50%); background-color: var(--success); color: #121212; font-weight: bold; padding: 8px 15px; border-radius: 5px; z-index: 2000; font-size: 0.9em; opacity: 0; transition: opacity 0.5s; box-shadow: 0 2px 10px rgba(0,0,0,0.5);}
+text { font-size: 15px; margin-Top: 0px; color: var(--dark);}
 .contact-link { margin-top: 15px; font-size: 0.9em; font-weight: 500; }
-.contact-link a { color: var(--primary-dark); text-decoration: none; font-weight: bold; transition: color 0.2s; }
-.contact-link a:hover { color: var(--primary); text-decoration: underline; }
+.contact-link a { color: var(--primary); text-decoration: none; font-weight: bold; transition: color 0.2s; }
+.contact-link a:hover { color: #fff; text-decoration: underline; }
 </style>
 <script>
     function copyToClipboard(elementId) {
@@ -618,11 +612,11 @@ text { font-size: 15px; margin-Top: 0px; }
                     card.innerHTML = data.message;
                 } else {
                     card.innerHTML = `
-                        <h4>✅ အကောင့်အသစ် ဖန်တီးပြီးပါပြီ</h4>
-                        <p><i class="icon">🔥</i> Server IP: <b>${data.ip || '{{ IP }}'}</b></p>  
-                        <p><i class="icon">👤</i> Username: <b>${data.user}</b></p>
-                        <p><i class="icon">🔑</i> Password: <b>${data.password}</b></p>
-                        <p><i class="icon">⏰</i> Expires: <b>${data.expires || 'N/A'}</b></p>                   
+                        <h4 style="color:#fff;">✅ အကောင့်အသစ် ဖန်တီးပြီးပါပြီ</h4>
+                        <p><i class="icon">🔥</i> Server IP: <b style="color:#fff;">${data.ip || '{{ IP }}'}</b></p>  
+                        <p><i class="icon">👤</i> Username: <b style="color:#fff;">${data.user}</b></p>
+                        <p><i class="icon">🔑</i> Password: <b style="color:#fff;">${data.password}</b></p>
+                        <p><i class="icon">⏰</i> Expires: <b style="color:#fff;">${data.expires || 'N/A'}</b></p>                   
                     `;
                 }
                 document.body.appendChild(card);
@@ -658,7 +652,7 @@ text { font-size: 15px; margin-Top: 0px; }
         <button class="save-btn" type="submit">Create Account</button>
     </form>
     </div> <nav class="bottom-nav">
-        <a href="/"><i class="icon">➕</i><span>အကောင့်ထည့်ရန်</span></a>
+        <a href="/" class="active"><i class="icon">➕</i><span>အကောင့်ထည့်ရန်</span></a>
         <a href="/users"><i class="icon">📜</i><span>အသုံးပြုသူ စာရင်း</span></a>
         <a href="/logout"><i class="icon">➡️</i><span>ထွက်ရန်</span></a>
     </nav>
@@ -921,7 +915,7 @@ def edit_user_password():
   save_users(users)
   sync_config_passwords() 
   
-  session["msg"] = json.dumps({"ok":True, "message": f"<h4>✅ **{user}** ရဲ့ အချက်အလက်များ ပြောင်းလဲပြီးပါပြီ။</h4><p>Password: <b>{new_password}</b></p><p>Expiry: <b>{new_expires}</b></p>", "user":user, "password":new_password})
+  session["msg"] = json.dumps({"ok":True, "message": f"<h4 style='color:#fff;'>✅ **{user}** ရဲ့ အချက်အလက်များ ပြောင်းလဲပြီးပါပြီ။</h4><p>Password: <b style='color:#fff;'>{new_password}</b></p><p>Expiry: <b style='color:#fff;'>{new_expires}</b></p>", "user":user, "password":new_password})
   return redirect(url_for('users_table_view'))
 
 @app.route("/delete", methods=["POST"])
