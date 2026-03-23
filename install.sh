@@ -1,5 +1,5 @@
 #!/bin/bash
-# ZIVPN UDP Server + Web UI (Myanmar) - Login IP Position & Nav Icon FIX + Expiry Logic Update + Status FIX + PASSWORD & EXPIRY EDIT FEATURE + LOGOUT FIX
+# ZIVPN UDP Server + Web UI (Myanmar) - Custom Logo & Neon Theme UI Update
 set -euo pipefail
 
 # ===== Pretty (CLEANED UP) =====
@@ -7,20 +7,20 @@ B="\e[1;34m"; G="\e[1;32m"; Y="\e[1;33m"; R="\e[1;31m"; C="\e[1;36m"; Z="\e[0m"
 LINE="${B}────────────────────────────────────────────────────────${Z}"
 say(){ 
     echo -e "\n$LINE"
-    echo -e "${G}ZIVPN UDP Server + Web UI (Password နှင့် သက်တမ်းကုန်ဆုံးချိန်ပါ ပြင်လို့ရအောင် အဆင့်မြှင့်ထားပါသည်)${Z}"
+    echo -e "${G}ZIVPN UDP Server + Web UI (Neon Theme & Custom Logo)${Z}"
     echo -e "$LINE"
     echo -e "${C}သက်တမ်းကုန်ဆုံးသည့်နေ့ ည ၁၁:၅၉:၅၉ အထိ သုံးခွင့်ပေးပြီးမှ ဖျက်ပါမည်။${Z}\n"
 }
 say 
 
-# ===== Root check (unchanged) =====
+# ===== Root check =====
 if [ "$(id -u)" -ne 0 ]; then
   echo -e "${R}ဤ script ကို root အဖြစ် run ရပါမယ် (sudo -i)${Z}"; exit 1
 fi
 
 export DEBIAN_FRONTEND=noninteractive
 
-# ===== apt guards (unchanged for brevity) =====
+# ===== apt guards =====
 wait_for_apt() {
   echo -e "${Y}⏳ apt သင့်လျော်မှုကို စောင့်ပါ...${Z}"
   for _ in $(seq 1 60); do
@@ -48,7 +48,7 @@ apt_guard_end(){
   if [ "${CNF_DISABLED:-0}" = "1" ] && [ -f "${CNF_CONF}.disabled" ]; then mv "${CNF_CONF}.disabled" "$CNF_CONF"; fi
 }
 
-# ===== Packages (unchanged) =====
+# ===== Packages =====
 echo -e "${Y}📦 Packages တင်နေပါတယ်...${Z}"
 apt_guard_start
 apt-get update -y -o APT::Update::Post-Invoke-Success::= -o APT::Update::Post-Invoke::= >/dev/null
@@ -62,7 +62,7 @@ apt_guard_end
 systemctl stop zivpn.service 2>/dev/null || true
 systemctl stop zivpn-web.service 2>/dev/null || true
 
-# ===== Paths and setup directories (unchanged) =====
+# ===== Paths and setup directories =====
 BIN="/usr/local/bin/zivpn"
 CFG="/etc/zivpn/config.json"
 USERS="/etc/zivpn/users.json"
@@ -70,7 +70,7 @@ ENVF="/etc/zivpn/web.env"
 TEMPLATES_DIR="/etc/zivpn/templates" 
 mkdir -p /etc/zivpn "$TEMPLATES_DIR" 
 
-# --- ZIVPN Binary, Config, Certs (UNCHANGED) ---
+# --- ZIVPN Binary, Config, Certs ---
 echo -e "${Y}⬇️ ZIVPN binary ကို ဒေါင်းနေပါတယ်...${Z}"
 PRIMARY_URL="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64"
 FALLBACK_URL="https://github.com/zahidbd2/udp-zivpn/releases/latest/download/udp-zivpn-linux-amd64"
@@ -94,14 +94,21 @@ if [ ! -f /etc/zivpn/zivpn.crt ] || [ ! -f /etc/zivpn/zivpn.key ]; then
     -keyout "/etc/zivpn/zivpn.key" -out "/etc/zivpn/zivpn.crt" >/dev/null 2>&1
 fi
 
-# --- Web Admin Login, VPN Passwords, config.json Update, systemd: ZIVPN (MODIFIED) ---
+# --- Web Admin Login, VPN Passwords, Custom Logo ---
 echo -e "${G}🔒 Web Admin Login UI ထည့်မလား..?${Z}"
 read -r -p "Web Admin Username (Enter=disable): " WEB_USER
 if [ -n "${WEB_USER:-}" ]; then
   read -r -s -p "Web Admin Password: " WEB_PASS; echo
   
   echo -e "${G}🔗 Login အောက်နားတွင် ပြသရန် ဆက်သွယ်ရန် Link (Optional)${Z}"
-  read -r -p "Contact Link (ဥပမာ: https://m.me/taknds69 or Enter=disable): " CONTACT_LINK
+  read -r -p "Contact Link (ဥပမာ: https://m.me/zaw or Enter=disable): " CONTACT_LINK
+  
+  # 💡 NEW: Logo ပြောင်းရန်
+  echo -e "${G}🖼️ Web Panel တွင်သုံးရန် ပုံလင့်ခ် (Logo URL) ထည့်ပါ${Z}"
+  read -r -p "Logo URL (Enter=Default): " CUSTOM_LOGO
+  if [ -z "${CUSTOM_LOGO:-}" ]; then
+    CUSTOM_LOGO="https://zivpn-web.free.nf/zivpn-icon.png"
+  fi
   
   if command -v openssl >/dev/null 2>&1; then
     WEB_SECRET="$(openssl rand -hex 32)"
@@ -121,10 +128,11 @@ PY_SECRET
   echo -e "${G}✅ Web login UI ဖွင့်ထားပါတယ်${Z}"
 else
   rm -f "$ENVF" 2>/dev/null || true
+  CUSTOM_LOGO="https://zivpn-web.free.nf/zivpn-icon.png"
   echo -e "${Y}ℹ️ Web login UI မဖွင့်ထားပါ (dev mode)${Z}"
 fi
 
-echo -e "${G}🔏 VPN Password List (ကော်မာဖြင့်ခွဲ) eg: M-69P,tak,dtac69${Z}"
+echo -e "${G}🔏 VPN Password List (ကော်မာဖြင့်ခွဲ) eg: M-69P,zaw,thinzar${Z}"
 read -r -p "Passwords (Enter=zi): " input_pw
 if [ -z "${input_pw:-}" ]; then PW_LIST='["zi"]'; else
   PW_LIST=$(echo "$input_pw" | awk -F',' '{
@@ -286,7 +294,7 @@ cat >"$TEMPLATES_DIR/users_table.html" <<'TABLE_HTML'
   max-width: 320px; 
   border-radius: 12px;
   position: relative;
-  box-shadow: 0 10px 35px rgba(0,0,0,0.6); 
+  box-shadow: 0 10px 40px rgba(0, 229, 255, 0.15); 
 }
 .close-btn { 
   color: var(--secondary); 
@@ -300,22 +308,22 @@ cat >"$TEMPLATES_DIR/users_table.html" <<'TABLE_HTML'
   cursor: pointer;
 }
 .close-btn:hover { color: var(--danger); }
-.section-title { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); color: var(--primary);}
+.section-title { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); color: var(--primary); text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);}
 
 .modal .input-group { margin-bottom: 20px; }
 .modal .input-label { display: block; text-align: left; font-weight: 600; color: #fff; font-size: 0.9em; margin-bottom: 5px; }
 .modal .input-field-wrapper { display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-color); transition: all 0.3s; }
-.modal .input-field-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2); }
+.modal .input-field-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2); }
 .modal .input-field-wrapper.is-readonly { background-color: var(--light); opacity: 0.8; }
 .modal .input-field-wrapper input { width: 100%; padding: 12px 10px; border: none; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #fff; }
 .modal .input-hint { margin-top: 5px; text-align: left; font-size: 0.75em; color: var(--secondary); line-height: 1.4; padding-left: 5px; }
 
-.modal-save-btn { width: 100%; padding: 12px; background-color: var(--primary); color: #121212; border: none; border-radius: 8px; font-size: 1.0em; cursor: pointer; transition: all 0.3s; margin-top: 10px; font-weight: bold; }
-.modal-save-btn:hover { background-color: var(--primary-dark); color: #fff; } 
+.modal-save-btn { width: 100%; padding: 12px; background-color: var(--primary); color: #0b0f19; border: none; border-radius: 8px; font-size: 1.0em; cursor: pointer; transition: all 0.3s; margin-top: 10px; font-weight: bold; box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);}
+.modal-save-btn:hover { background-color: var(--primary-dark); color: #fff; box-shadow: 0 0 15px rgba(0, 229, 255, 0.6);} 
 .modal-save-btn:active { transform: translateY(1px); }
 
-.btn-edit { background-color: rgba(255, 213, 79, 0.15); color: var(--warning); border: 1px solid rgba(255, 213, 79, 0.3); padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.2s; margin-right: 5px; }
-.btn-edit:hover { background-color: var(--warning); color: #121212; }
+.btn-edit { background-color: rgba(0, 229, 255, 0.1); color: var(--primary); border: 1px solid rgba(0, 229, 255, 0.3); padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.2s; margin-right: 5px; }
+.btn-edit:hover { background-color: var(--primary); color: #0b0f19; box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);}
 .delform { display: inline-block; margin: 0; }
 .btn-delete { padding: 6px 10px; font-size: 0.9em; } 
 
@@ -337,7 +345,6 @@ cat >"$TEMPLATES_DIR/users_table.html" <<'TABLE_HTML'
         document.getElementById('edit-user').value = user;
         document.getElementById('current-user-display').value = user;
         
-        // Pre-fill fields with current values so user only modifies what they want
         document.getElementById('new-password').value = password;
         document.getElementById('new-expires').value = expires;
         
@@ -361,20 +368,20 @@ cat >"$TEMPLATES_DIR/users_table_wrapper.html" <<'WRAPPER_HTML'
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="refresh" content="120">
 <style>
-/* Global Styles for Mobile UI (DARK THEME) */
+/* Global Styles for Mobile UI (NEON/CYBERPUNK THEME) */
 :root {
-    --primary: #ff9800;
-    --primary-dark: #f57c00; 
-    --secondary: #9e9e9e; 
+    --primary: #00e5ff; 
+    --primary-dark: #00b8d4; 
+    --secondary: #90a4ae; 
     --success: #00e676; 
-    --danger: #ff5252;
-    --light: #2a2a2a; 
-    --dark: #e0e0e0; 
-    --bg-color: #121212; 
-    --card-bg: #1e1e1e;
-    --border-color: #333333;
-    --warning: #ffd54f;
-    --warning-bg: rgba(255, 213, 79, 0.15);
+    --danger: #ff1744;
+    --light: #263238; 
+    --dark: #eceff1; 
+    --bg-color: #0b0f19; 
+    --card-bg: #111827;
+    --border-color: #1f2937;
+    --warning: #ffea00;
+    --warning-bg: rgba(255, 234, 0, 0.15);
 }
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color);
@@ -383,33 +390,33 @@ body {
 }
 .icon { font-style: normal; margin-right: 5px; }
 
-.main-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); border-bottom: 1px solid var(--border-color); margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; }
-.header-logo a { font-size: 1.6em; font-weight: bold; color: var(--primary); text-decoration: none;}
-.header-logo .highlight { color: #fff; }
+.main-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 15px; box-shadow: 0 2px 15px rgba(0, 229, 255, 0.1); border-bottom: 1px solid var(--border-color); margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; }
+.header-logo a { font-size: 1.6em; font-weight: bold; color: var(--primary); text-decoration: none; text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);}
+.header-logo .highlight { color: #fff; text-shadow: none;}
 
-.bottom-nav { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(30, 30, 30, 0.9); backdrop-filter: blur(10px); box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.5); border-top: 1px solid var(--border-color); z-index: 1000; padding: 5px 0; }
-.bottom-nav a { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--secondary); font-size: 0.75em; padding: 8px; border-radius: 6px; transition: color 0.2s, background-color 0.2s; min-width: 80px; }
-.bottom-nav a:hover, .bottom-nav a.active { color: var(--primary); }
-.bottom-nav a i.icon { font-size: 1.2em; margin-right: 0; margin-bottom: 3px; color: #ffd966; filter: drop-shadow(0 0 2px rgba(255, 217, 102, 0.5));}
-.bottom-nav a:hover i.icon, .bottom-nav a.active i.icon { color: var(--primary); filter: drop-shadow(0 0 5px rgba(255, 152, 0, 0.5));}
+.bottom-nav { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(17, 24, 39, 0.95); backdrop-filter: blur(10px); box-shadow: 0 -2px 20px rgba(0, 229, 255, 0.15); border-top: 1px solid var(--border-color); z-index: 1000; padding: 5px 0; }
+.bottom-nav a { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--secondary); font-size: 0.75em; padding: 8px; border-radius: 6px; transition: color 0.3s, text-shadow 0.3s; min-width: 80px; }
+.bottom-nav a:hover, .bottom-nav a.active { color: var(--primary); text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);}
+.bottom-nav a i.icon { font-size: 1.2em; margin-right: 0; margin-bottom: 3px; color: #81d4fa; filter: drop-shadow(0 0 2px rgba(129, 212, 250, 0.5));}
+.bottom-nav a:hover i.icon, .bottom-nav a.active i.icon { color: var(--primary); filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.8));}
 
 .table-container { padding: 0 10px; margin: 0 auto; max-width: 100%; } 
-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; background-color: var(--card-bg); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);}
+table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; background-color: var(--card-bg); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);}
 th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.9em; color: var(--dark);}
-th { background-color: #252525; color: var(--primary); font-weight: 600; text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px;} 
+th { background-color: #1a2235; color: var(--primary); font-weight: 600; text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px;} 
 tr:last-child td { border-bottom: none; }
-tr:nth-child(even) { background-color: #1a1a1a; }
-tr:hover { background-color: #2c2c2c; }
+tr:nth-child(even) { background-color: #141c2b; }
+tr:hover { background-color: #1e293b; }
 
 @media (max-width: 768px) {
     .table-container { padding: 0 5px; }
     table, thead, tbody, th, td, tr { display: block; border: none;}
     table { background-color: transparent; box-shadow: none;}
     thead { display: none; } 
-    tr { background-color: var(--card-bg) !important; border: 1px solid var(--border-color); margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+    tr { background-color: var(--card-bg) !important; border: 1px solid var(--border-color); margin-bottom: 15px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
     td { border: none; position: relative; padding-left: 45%; text-align: right; border-bottom: 1px dashed var(--border-color); }
     td:last-child { border-bottom: none; }
-    td:before { content: attr(data-label); position: absolute; left: 0; width: 40%; padding-left: 10px; font-weight: bold; text-align: left; color: var(--secondary); font-size: 0.9em; }
+    td:before { content: attr(data-label); position: absolute; left: 0; width: 40%; padding-left: 10px; font-weight: bold; text-align: left; color: var(--primary); font-size: 0.9em; }
     .pill { padding: 4px 8px; font-size: 0.8em; min-width: 70px; }
     .delform { display: block; text-align: right; }
     .btn-delete { width: 80px; padding: 6px 8px; font-size: 0.8em; margin-top: 5px;}
@@ -420,19 +427,19 @@ tr:hover { background-color: #2c2c2c; }
 @media (min-width: 769px) { .bottom-nav { display: none; } body { padding-bottom: 0; } }
 
 .pill { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold; min-width: 90px; justify-content: center;}
-.ok { background-color: rgba(0, 230, 118, 0.15); color: var(--success); border: 1px solid rgba(0, 230, 118, 0.3);} 
-.pill-expired { background-color: rgba(255, 82, 82, 0.15); color: var(--danger); border: 1px solid rgba(255, 82, 82, 0.3);}
-.pill-expiring { background-color: var(--warning-bg); color: var(--warning); border: 1px solid rgba(255, 213, 79, 0.3);} 
+.ok { background-color: rgba(0, 230, 118, 0.15); color: var(--success); border: 1px solid rgba(0, 230, 118, 0.3); box-shadow: 0 0 8px rgba(0, 230, 118, 0.2);} 
+.pill-expired { background-color: rgba(255, 23, 68, 0.15); color: var(--danger); border: 1px solid rgba(255, 23, 68, 0.3); box-shadow: 0 0 8px rgba(255, 23, 68, 0.2);}
+.pill-expiring { background-color: var(--warning-bg); color: var(--warning); border: 1px solid rgba(255, 234, 0, 0.3); box-shadow: 0 0 8px rgba(255, 234, 0, 0.2);} 
 .text-expiring { color: var(--warning); font-weight: bold; } 
 .days-remaining { font-size: 0.85em; color: var(--secondary); font-weight: 500; display: inline-block; margin-top: 2px; }
 .days-remaining .text-expiring { font-weight: bold; }
 tr.expired td { opacity: 0.5; text-decoration-color: var(--danger); }
 tr.expiring-soon { border-left: 4px solid var(--warning); } 
 
-.btn-delete { background-color: rgba(255, 82, 82, 0.15); color: var(--danger); border: 1px solid rgba(255, 82, 82, 0.3); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;}
-.btn-delete:hover { background-color: var(--danger); color: #fff;}
+.btn-delete { background-color: rgba(255, 23, 68, 0.1); color: var(--danger); border: 1px solid rgba(255, 23, 68, 0.3); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.2s;}
+.btn-delete:hover { background-color: var(--danger); color: #fff; box-shadow: 0 0 10px rgba(255, 23, 68, 0.4);}
 
-.modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(3px);}
+.modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(11, 15, 25, 0.8); backdrop-filter: blur(4px);}
 /* Model CSS imported via users_table.html */
 </style>
 </head><body>
@@ -471,7 +478,7 @@ WRAPPER_HTML
 
 # 💡 Web Panel (Flask - web.py)
 echo -e "${Y}🖥️ Web Panel (web.py) ကို စစ်ဆေးနေပါတယ်...${Z}"
-cat >/etc/zivpn/web.py <<'PY'
+cat >/etc/zivpn/web.py <<PY
 from flask import Flask, jsonify, render_template, render_template_string, request, redirect, url_for, session, make_response
 import json, re, subprocess, os, tempfile, hmac
 from datetime import datetime, timedelta, date
@@ -479,7 +486,7 @@ from datetime import datetime, timedelta, date
 USERS_FILE = "/etc/zivpn/users.json"
 CONFIG_FILE = "/etc/zivpn/config.json"
 LISTEN_FALLBACK = "5667"
-LOGO_URL = "https://zivpn-web.free.nf/zivpn-icon.png"
+LOGO_URL = "${CUSTOM_LOGO}"
 
 def get_server_ip():
     try:
@@ -494,7 +501,7 @@ def get_server_ip():
 SERVER_IP_FALLBACK = get_server_ip()
 CONTACT_LINK = os.environ.get("WEB_CONTACT_LINK", "").strip()
 
-# HTML Template (DARK THEME UI)
+# HTML Template (NEON THEME UI)
 HTML = """<!doctype html>
 <html lang="my"><head><meta charset="utf-8">
 <title>ZIVPN User Panel</title>
@@ -502,47 +509,47 @@ HTML = """<!doctype html>
 <meta http-equiv="refresh" content="120">
 <style>
 /* Global Styles */
-:root { --primary: #ff9800; --primary-dark: #f57c00; --secondary: #9e9e9e; --success: #00e676; --danger: #ff5252; --light: #2a2a2a; --dark: #e0e0e0; --bg-color: #121212; --card-bg: #1e1e1e; --border-color: #333333; --warning: #ffd54f; }
+:root { --primary: #00e5ff; --primary-dark: #00b8d4; --secondary: #90a4ae; --success: #00e676; --danger: #ff1744; --light: #263238; --dark: #eceff1; --bg-color: #0b0f19; --card-bg: #111827; --border-color: #1f2937; --warning: #ffea00; }
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); line-height: 1.6; color: var(--dark); margin: 0; padding: 0; padding-bottom: 70px; }
 .icon { font-style: normal; margin-right: 5px; }
-.main-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); border-bottom: 1px solid var(--border-color); margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; }
-.header-logo a { font-size: 1.6em; font-weight: bold; color: var(--primary); text-decoration: none;} 
-.header-logo .highlight { color: #fff; }
-.bottom-nav { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(30, 30, 30, 0.9); backdrop-filter: blur(10px); box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.5); border-top: 1px solid var(--border-color); z-index: 1000; padding: 5px 0; }
-.bottom-nav a { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--secondary); font-size: 0.75em; padding: 8px; border-radius: 6px; transition: color 0.2s, background-color 0.2s; min-width: 80px; }
-.bottom-nav a:hover, .bottom-nav a.active { color: var(--primary); }
-.bottom-nav a i.icon { font-size: 1.2em; margin-right: 0; margin-bottom: 3px; color: #ffd966; filter: drop-shadow(0 0 2px rgba(255, 217, 102, 0.5));}
-.bottom-nav a:hover i.icon, .bottom-nav a.active i.icon { color: var(--primary); filter: drop-shadow(0 0 5px rgba(255, 152, 0, 0.5));}
+.main-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 15px; box-shadow: 0 2px 15px rgba(0, 229, 255, 0.1); border-bottom: 1px solid var(--border-color); margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; }
+.header-logo a { font-size: 1.6em; font-weight: bold; color: var(--primary); text-decoration: none; text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);} 
+.header-logo .highlight { color: #fff; text-shadow: none;}
+.bottom-nav { display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(17, 24, 39, 0.95); backdrop-filter: blur(10px); box-shadow: 0 -2px 20px rgba(0, 229, 255, 0.15); border-top: 1px solid var(--border-color); z-index: 1000; padding: 5px 0; }
+.bottom-nav a { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--secondary); font-size: 0.75em; padding: 8px; border-radius: 6px; transition: color 0.3s, text-shadow 0.3s; min-width: 80px; }
+.bottom-nav a:hover, .bottom-nav a.active { color: var(--primary); text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);}
+.bottom-nav a i.icon { font-size: 1.2em; margin-right: 0; margin-bottom: 3px; color: #81d4fa; filter: drop-shadow(0 0 2px rgba(129, 212, 250, 0.5));}
+.bottom-nav a:hover i.icon, .bottom-nav a.active i.icon { color: var(--primary); filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.8));}
 @media (min-width: 769px) { .bottom-nav { display: none; } body { padding-bottom: 0; } }
-.login-container, .boxa1 { background-color: var(--card-bg); padding: 30px 20px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color); width: 90%; max-width: 400px; margin: 30px auto; text-align: center; }
+.login-container, .boxa1 { background-color: var(--card-bg); padding: 30px 20px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6); border: 1px solid var(--border-color); width: 90%; max-width: 400px; margin: 30px auto; text-align: center; }
 .boxa1 { max-width: 600px; margin-top: 15px; text-align: left; }
-.info-card { background-color: rgba(255, 152, 0, 0.1); color: var(--primary); padding: 15px 20px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.0em; margin-bottom: 15px; border: 1px solid rgba(255, 152, 0, 0.3); box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); }
-.info-card span { font-size: 1.1em; margin-right: 5px; color: #fff;}
-.profile-image-container { display: inline-block; margin-bottom: 15px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); box-shadow: 0 0 15px rgba(255, 152, 0, 0.4);}
-.profile-image { width: 70px; height: 70px; object-fit: cover; display: block; }
-h1 { font-size: 22px; color: #fff; margin-bottom: 5px; }
+.info-card { background-color: rgba(0, 229, 255, 0.05); color: var(--primary); padding: 15px 20px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.0em; margin-bottom: 15px; border: 1px solid rgba(0, 229, 255, 0.2); box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.1); }
+.info-card span { font-size: 1.1em; margin-right: 5px; color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.5);}
+.profile-image-container { display: inline-block; margin-bottom: 15px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);}
+.profile-image { width: 80px; height: 80px; object-fit: cover; display: block; }
+h1 { font-size: 24px; color: #fff; margin-bottom: 5px; text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);}
 .panel-title { font-size: 14px; color: var(--secondary); margin-bottom: 25px; }
-.login-ip-display { font-size: 16px; color: var(--primary); font-weight: bold; margin-top: -15px; margin-bottom: 25px; }
+.login-ip-display { font-size: 16px; color: var(--primary); font-weight: bold; margin-top: -15px; margin-bottom: 25px; letter-spacing: 1px;}
 .input-group { margin-bottom: 15px; text-align: left; }
 .input-field-wrapper { display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; margin-Top: 5px; background-color: var(--bg-color); transition: all 0.3s; }
-.input-field-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2); }
+.input-field-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2); }
 .input-field-wrapper .icon { padding: 0 10px; color: var(--secondary); background: transparent; }
 input[type="text"], input[type="password"], input[name="expires"], input[name="port"], input[name="ip"] { width: 100%; padding: 12px 10px; border: none; border-radius: 0 8px 8px 0; font-size: 16px; outline: none; background: transparent; color: #fff; appearance: none; -webkit-appearance: none; }
-input[name="ip"] { background-color: #252525; color: var(--secondary); cursor: pointer; }
-.login-button, .save-btn { width: 100%; padding: 12px; background-color: var(--primary); color: #121212; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s; margin-top: 20px; font-weight: bold; }
-.login-button:hover, .save-btn:hover { background-color: var(--primary-dark); color: #fff;} 
+input[name="ip"] { background-color: #1a2235; color: var(--primary); cursor: pointer; font-weight: bold;}
+.login-button, .save-btn { width: 100%; padding: 12px; background-color: var(--primary); color: #0b0f19; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s; margin-top: 20px; font-weight: bold; box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);}
+.login-button:hover, .save-btn:hover { background-color: var(--primary-dark); color: #fff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);} 
 .login-button:active, .save-btn:active { transform: translateY(1px); } 
-.section-title { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 15px; }
+.section-title { font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 15px; }
 .row{display:flex;gap:15px;flex-wrap:wrap;margin-bottom: 5px;}
 .row>div{flex:1 1 100%;}
 @media (min-width: 600px) { .row>div{flex:1 1 220px;} }
-.err{ color: var(--danger); background-color: rgba(255, 82, 82, 0.15); border: 1px solid rgba(255, 82, 82, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; text-align: center; }
-.user-info-card { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: rgba(0, 230, 118, 0.15); color: var(--success); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 8px; padding: 15px 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); z-index: 2000; max-width: 300px; width: 90%; text-align: left; backdrop-filter: blur(5px);}
-#copy-notification { position: fixed; top: 10px; right: 50%; transform: translateX(50%); background-color: var(--success); color: #121212; font-weight: bold; padding: 8px 15px; border-radius: 5px; z-index: 2000; font-size: 0.9em; opacity: 0; transition: opacity 0.5s; box-shadow: 0 2px 10px rgba(0,0,0,0.5);}
-text { font-size: 15px; margin-Top: 0px; color: var(--dark);}
+.err{ color: var(--danger); background-color: rgba(255, 23, 68, 0.1); border: 1px solid rgba(255, 23, 68, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; text-align: center; box-shadow: 0 0 10px rgba(255, 23, 68, 0.2);}
+.user-info-card { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: rgba(0, 230, 118, 0.15); color: var(--success); border: 1px solid rgba(0, 230, 118, 0.4); border-radius: 8px; padding: 15px 20px; box-shadow: 0 10px 30px rgba(0, 230, 118, 0.2); z-index: 2000; max-width: 300px; width: 90%; text-align: left; backdrop-filter: blur(8px);}
+#copy-notification { position: fixed; top: 10px; right: 50%; transform: translateX(50%); background-color: var(--success); color: #0b0f19; font-weight: bold; padding: 8px 15px; border-radius: 5px; z-index: 2000; font-size: 0.9em; opacity: 0; transition: opacity 0.5s; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);}
+text { font-size: 15px; margin-Top: 0px; color: var(--secondary);}
 .contact-link { margin-top: 15px; font-size: 0.9em; font-weight: 500; }
-.contact-link a { color: var(--primary); text-decoration: none; font-weight: bold; transition: color 0.2s; }
-.contact-link a:hover { color: #fff; text-decoration: underline; }
+.contact-link a { color: var(--primary); text-decoration: none; font-weight: bold; transition: all 0.3s; }
+.contact-link a:hover { color: #fff; text-shadow: 0 0 8px rgba(0, 229, 255, 0.6); }
 </style>
 <script>
     function copyToClipboard(elementId) {
@@ -612,8 +619,8 @@ text { font-size: 15px; margin-Top: 0px; color: var(--dark);}
                     card.innerHTML = data.message;
                 } else {
                     card.innerHTML = `
-                        <h4 style="color:#fff;">✅ အကောင့်အသစ် ဖန်တီးပြီးပါပြီ</h4>
-                        <p><i class="icon">🔥</i> Server IP: <b style="color:#fff;">${data.ip || '{{ IP }}'}</b></p>  
+                        <h4 style="color:#fff; text-shadow:0 0 5px rgba(255,255,255,0.3);">✅ အကောင့်အသစ် ဖန်တီးပြီးပါပြီ</h4>
+                        <p><i class="icon">🔥</i> Server IP: <b style="color:var(--primary);">${data.ip || '{{ IP }}'}</b></p>  
                         <p><i class="icon">👤</i> Username: <b style="color:#fff;">${data.user}</b></p>
                         <p><i class="icon">🔑</i> Password: <b style="color:#fff;">${data.password}</b></p>
                         <p><i class="icon">⏰</i> Expires: <b style="color:#fff;">${data.expires || 'N/A'}</b></p>                   
@@ -874,7 +881,6 @@ def add_user():
   session["msg"] = json.dumps(msg_dict)
   return redirect(url_for('index'))
 
-# 💡 ROUTE MODIFIED: Password နှင့် Expiry ပါ Edit လုပ်နိုင်ရန်
 @app.route("/edit", methods=["POST"])
 def edit_user_password():
   if not require_login(): return redirect(url_for('login'))
@@ -928,7 +934,6 @@ def delete_user_html():
   delete_user(user) 
   return redirect(url_for('users_table_view'))
 
-# 💡 LOGOUT ROUTE ADDED HERE (This fixes the white screen bug and prevents unauthorized access)
 @app.route("/logout", methods=["GET"])
 def logout():
     session.clear()
@@ -941,7 +946,7 @@ if __name__ == "__main__":
   app.run(host="0.0.0.0", port=8080)
 PY
 
-# ===== Web systemd (unchanged) =====
+# ===== Web systemd =====
 cat >/etc/systemd/system/zivpn-web.service <<'EOF'
 [Unit]
 Description=ZIVPN Web Panel
@@ -960,7 +965,7 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
-# ===== Networking: forwarding + DNAT + MASQ + UFW (unchanged) =====
+# ===== Networking: forwarding + DNAT + MASQ + UFW =====
 echo -e "${Y}🌐 UDP/DNAT + UFW + sysctl အပြည့်ချထားနေပါတယ်...${Z}"
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
 grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
