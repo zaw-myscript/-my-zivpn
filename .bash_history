@@ -1,5 +1,5 @@
 #!/bin/bash
-# ZIVPN UDP Server + Web UI (Myanmar) - Login IP Position & Nav Icon FIX + Expiry Logic Update + Status FIX + PASSWORD & EXPIRY EDIT FEATURE + LOGOUT FIX
+# ZIVPN UDP Server + Web UI (Myanmar) - Login IP Position & Nav Icon FIX + Expiry Logic Update + Status FIX + PASSWORD & EXPIRY EDIT FEATURE + LOGOUT FIX + NETWORK OPTIMIZATION
 set -euo pipefail
 
 # ===== Pretty (CLEANED UP) =====
@@ -977,10 +977,21 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
-# ===== Networking: forwarding + DNAT + MASQ + UFW (unchanged) =====
+# ===== Networking: forwarding + DNAT + MASQ + UFW + Network Tuning =====
 echo -e "${Y}🌐 UDP/DNAT + UFW + sysctl အပြည့်ချထားနေပါတယ်...${Z}"
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
 grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
+
+# 💡 NETWORK OPTIMIZATION ADDED HERE
+echo -e "${Y}🚀 Network အမြန်နှုန်း မြှင့်တင်ခြင်း (BBR & UDP Buffers) ကိုပါ ပေါင်းထည့်ထားပါသည်...${Z}"
+grep -q "^net.core.default_qdisc=fq" /etc/sysctl.conf || echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+grep -q "^net.ipv4.tcp_congestion_control=bbr" /etc/sysctl.conf || echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+grep -q "^net.core.rmem_max" /etc/sysctl.conf || echo "net.core.rmem_max=16777216" >> /etc/sysctl.conf
+grep -q "^net.core.wmem_max" /etc/sysctl.conf || echo "net.core.wmem_max=16777216" >> /etc/sysctl.conf
+grep -q "^net.core.rmem_default" /etc/sysctl.conf || echo "net.core.rmem_default=1048576" >> /etc/sysctl.conf
+grep -q "^net.core.wmem_default" /etc/sysctl.conf || echo "net.core.wmem_default=1048576" >> /etc/sysctl.conf
+sysctl -p >/dev/null 2>&1
+# ------------------------------------
 
 IFACE=$(ip -4 route ls | awk '{print $5; exit}')
 [ -n "${IFACE:-}" ] || IFACE=eth0
