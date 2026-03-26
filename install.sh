@@ -1,5 +1,5 @@
 #!/bin/bash
-# ZIVPN UDP Server + Cyberpunk Web UI + Network Optimization (All-in-One)
+# ZIVPN UDP Server + Cyberpunk Web UI + Network Optimization (All-in-One with Copy Feature)
 set -euo pipefail
 
 B="\e[1;34m"; G="\e[1;32m"; Y="\e[1;33m"; R="\e[1;31m"; C="\e[1;36m"; Z="\e[0m"
@@ -343,7 +343,14 @@ body { background: var(--bg); color: var(--text); margin: 0; padding: 0; padding
 .bottom-nav a.active i { filter: grayscale(0%) drop-shadow(0 0 5px var(--primary-glow)); transform: translateY(-3px); }
 .msg { padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid; }
 .msg.err { background: rgba(255,51,102,0.1); color: var(--danger); border-color: rgba(255,51,102,0.3); }
-.msg.success { background: rgba(0,255,204,0.1); color: var(--primary); border-color: var(--primary-glow); }
+
+/* 💡 Copy Card CSS Additions */
+.user-info-card { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 255, 204, 0.1); color: var(--text); border: 1px solid var(--primary-glow); border-radius: 12px; padding: 20px; box-shadow: 0 10px 40px rgba(0,255,204,0.3); z-index: 2000; width: 90%; max-width: 350px; backdrop-filter: blur(10px); }
+.user-info-card h4 { margin-top: 0; color: var(--primary); font-size: 1.1rem; margin-bottom: 10px; text-shadow: 0 0 5px var(--primary-glow); }
+.user-info-card p { margin: 8px 0; font-size: 0.95rem; }
+.user-info-card b { color: #fff; font-family: monospace; font-size: 1.05rem; }
+.copy-btn { margin-top: 15px; width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); color: #fff; border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: 600; }
+.copy-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary-glow); }
 </style>
 </head><body>
 <div class="header"><h1>ZAW<span>VPN</span> PRO</h1></div>
@@ -370,7 +377,39 @@ body { background: var(--bg); color: var(--text); margin: 0; padding: 0; padding
         <p>Active Users Online</p>
     </div>
     {% if err %}<div class="msg err">{{err}}</div>{% endif %}
-    {% if msg %}<div class="msg success">✅ အကောင့်အသစ် ဖန်တီးပြီးပါပြီ။</div>{% endif %}
+    
+    <script>
+        {% if msg and '{' in msg and '}' in msg %}
+        try {
+            const data = JSON.parse('{{ msg | safe }}');
+            if (data.user) {
+                const card = document.createElement('div');
+                card.className = 'user-info-card';
+                card.innerHTML = `
+                    <h4>✅ အကောင့်အသစ် ဖန်တီးပြီးပါပြီ</h4>
+                    <p>🔥 Server IP: <b style="color:var(--primary);">${data.ip || '{{ IP }}'}</b></p>
+                    <p>👤 Username: <b>${data.user}</b></p>
+                    <p>🔑 Password: <b>${data.password}</b></p>
+                    <p>⏰ Expires: <b>${data.expires || 'N/A'}</b></p>
+                    <button class="copy-btn" onclick="copyDetails()">📋 Copy အချက်အလက်များ</button>
+                `;
+                document.body.appendChild(card);
+                
+                window.copyDetails = function() {
+                    const text = `✅ အကောင့်အသစ် ဖန်တီးပြီးပါပြီ\n🔥 Server IP: ${data.ip || '{{ IP }}'}\n👤 Username: ${data.user}\n🔑 Password: ${data.password}\n⏰ Expires: ${data.expires || 'N/A'}`;
+                    navigator.clipboard.writeText(text).then(() => {
+                        const btn = card.querySelector('.copy-btn');
+                        btn.innerHTML = '✅ Copied!';
+                        btn.style.background = 'var(--primary)';
+                        btn.style.color = '#000';
+                        setTimeout(() => { if(card.parentNode) card.parentNode.removeChild(card); }, 2500);
+                    }).catch(err => alert("Copy error!"));
+                };
+            }
+        } catch (e) { console.error("Error parsing message JSON:", e); }
+        {% endif %}
+    </script>
+    
     <div class="glass-panel">
         <h3 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;"><i style="font-style:normal;">➕</i> Create New Account</h3>
         <form action="/add" method="POST">
@@ -511,6 +550,8 @@ def login():
 def add_user():
   if require_login(): return redirect(url_for('login'))
   user=(request.form.get("user") or "").strip(); password=(request.form.get("password") or "").strip(); expires=(request.form.get("expires") or "").strip()
+  ip = (request.form.get("ip") or "").strip() or SERVER_IP_FALLBACK # 💡 Get IP
+  
   if re.compile(r'[\u1000-\u109F]').search(user) or re.compile(r'[\u1000-\u109F]').search(password):
       session["err"] = "❌ မြန်မာစာလုံးများ ခွင့်မပြုပါ"; return redirect(url_for('index'))
   if expires.isdigit(): expires=(datetime.now() + timedelta(days=int(expires))).strftime("%Y-%m-%d")
@@ -518,7 +559,13 @@ def add_user():
   for u in users:
     if u.get("user","").lower()==user.lower(): u["password"]=password; u["expires"]=expires; replaced=True; break
   if not replaced: users.append({"user":user,"password":password,"expires":expires})
-  save_users(users); sync_config_passwords(); session["msg"] = "OK"
+  
+  save_users(users); sync_config_passwords()
+  
+  # 💡 Added back the JSON message for the Copy Card popup
+  msg_dict = { "user": user, "password": password, "expires": expires, "ip": ip }
+  session["msg"] = json.dumps(msg_dict)
+  
   return redirect(url_for('index'))
 
 @app.route("/edit", methods=["POST"])
