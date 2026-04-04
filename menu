@@ -31,10 +31,10 @@ os.rename(cfile+'.tmp', cfile)
 
 IP=$(cat /etc/IP 2>/dev/null || wget -qO- ipv4.icanhazip.com 2>/dev/null)
 
-# Domain Handling
-if [[ -f /etc/domain && -s /etc/domain ]]; then
-    HOST_DOMAIN=$(cat /etc/domain | tr -d '\r\n ')
-    if [[ "$HOST_DOMAIN" == "No-Domain" || "$HOST_DOMAIN" == "" ]]; then
+# 🔴 DOMAIN ပြန်ဖတ်မည့်စနစ် 🔴
+if [[ -f /etc/domain ]]; then
+    HOST_DOMAIN=$(cat /etc/domain | tr -d '\r' | tr -d '\n' | tr -d ' ')
+    if [[ -z "$HOST_DOMAIN" || "$HOST_DOMAIN" == "No-Domain" ]]; then
         HOST_DOMAIN="$IP"
     fi
 else
@@ -185,7 +185,6 @@ except: print('\033[1;31mအကောင့်များ မရှိသေး
         echo -e "\033[1;36m(Menu သို့ ပြန်သွားလိုပါက ဘာမှမရေးဘဲ Enter ခေါက်ပါ)\033[0m"
         read -p "➔ နံပါတ်ရိုက်ထည့်ပါ : " num
         
-        # Back to menu if empty
         if [[ -z "$num" ]]; then continue; fi
 
         if [[ "$num" =~ ^[0-9]+$ ]]; then
@@ -237,7 +236,6 @@ except: print('\033[1;31mအကောင့်များ မရှိသေး
         echo -e "\033[1;36m(Menu သို့ ပြန်သွားလိုပါက ဘာမှမရေးဘဲ Enter ခေါက်ပါ)\033[0m"
         read -p "➔ နံပါတ်ရိုက်ထည့်ပါ : " num
         
-        # Back to menu if empty
         if [[ -z "$num" ]]; then continue; fi
 
         if [[ "$num" =~ ^[0-9]+$ ]]; then
@@ -247,7 +245,6 @@ except: print('\033[1;31mအကောင့်များ မရှိသေး
             echo -e "\033[1;36m(Menu သို့ ပြန်သွားလိုပါက ဘာမှမရေးဘဲ Enter ခေါက်ပါ)\033[0m"
             read -p "➔ ရိုက်ထည့်ရန် : " dias
             
-            # Back to menu if empty
             if [[ -z "$dias" ]]; then continue; fi
 
             renewed_user=$(python3 <<EOF
