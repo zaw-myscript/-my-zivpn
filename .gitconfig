@@ -90,18 +90,22 @@ fi
 [ -f "$USERS" ] || echo "[]" > "$USERS"
 chmod 644 "$CFG" "$USERS"
 
-# DOMAIN PROMPT
+# 🔴 DOMAIN သေချာမှတ်မည့်စနစ် 🔴
 echo ""
 echo -e "${C}────────────────────────────────────────────────────────${Z}"
 echo -e "${Y}🌐 Domain ထည့်သွင်းလိုပါသလား? (Y/n)${Z}"
-read -p "ရွေးချယ်ရန်: " insert_domain
+read -p "➔ ရွေးချယ်ရန်: " insert_domain
 if [[ "${insert_domain,,}" == "y" || "${insert_domain,,}" == "yes" ]]; then
-    read -p "Domain ကို ရိုက်ထည့်ပါ (ဥပမာ - dtac.gamemobile.com): " my_domain
+    read -p "➔ Domain ကို ရိုက်ထည့်ပါ (ဥပမာ - dtac.gamemobile.com): " raw_domain
+    # Space တွေပါသွားရင် ဖယ်ထုတ်ပြီး သေချာသိမ်းမည်
+    my_domain=$(echo "$raw_domain" | tr -d ' ' | tr -d '\r' | tr -d '\n')
     echo "$my_domain" > /etc/domain
-    echo -e "${G}✅ Domain အောင်မြင်စွာ မှတ်သားပြီးပါပြီ!${Z}"
+    chmod 777 /etc/domain
+    echo -e "${G}✅ Domain ($my_domain) ကို အောင်မြင်စွာ မှတ်သားပြီးပါပြီ!${Z}"
 else
     echo "No-Domain" > /etc/domain
-    echo -e "${Y}⚠️ Domain မထည့်သွင်းပါ။ (No-Domain) အဖြစ်သတ်မှတ်ပါမည်။${Z}"
+    chmod 777 /etc/domain
+    echo -e "${Y}⚠️ Domain မထည့်သွင်းပါ။ Menu တွင် IP ကိုသာ ပြသပါမည်။${Z}"
 fi
 echo -e "${C}────────────────────────────────────────────────────────${Z}"
 echo ""
