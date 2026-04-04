@@ -31,11 +31,14 @@ os.rename(cfile+'.tmp', cfile)
 
 IP=$(cat /etc/IP 2>/dev/null || wget -qO- ipv4.icanhazip.com 2>/dev/null)
 
-# Clean and Read Domain securely
-if [[ -f /etc/domain ]]; then
-    HOST_DOMAIN=$(cat /etc/domain | tr -d '\r' | tr -d '\n' | tr -d ' ')
+# Domain Handling (If empty or No-Domain, show IP instead)
+if [[ -f /etc/domain && -s /etc/domain ]]; then
+    HOST_DOMAIN=$(cat /etc/domain | tr -d '\r\n ')
+    if [[ "$HOST_DOMAIN" == "No-Domain" || "$HOST_DOMAIN" == "" ]]; then
+        HOST_DOMAIN="$IP"
+    fi
 else
-    HOST_DOMAIN="No-Domain"
+    HOST_DOMAIN="$IP"
 fi
 
 if [[ "$(grep -c "Ubuntu" /etc/issue.net)" = "1" ]]; then
@@ -177,7 +180,8 @@ except: print('\033[1;31mအကောင့်များ မရှိသေး
 "
         echo ""
         echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-        echo -ne "\033[1;33m◈ ဖျက်လိုသော အကောင့်နံပါတ်ကို ရွေးပါ: \033[1;37m"; read num
+        echo -e "\033[1;33m👇 ဖျက်လိုသော အကောင့်၏ 'နံပါတ်' ကို အောက်တွင် ရွေးချယ်ပါ 👇\033[0m"
+        read -p "➔ နံပါတ်ရိုက်ထည့်ပါ : " num
         if [[ "$num" =~ ^[0-9]+$ ]]; then
             deleted_user=$(python3 <<EOF
 import json, os
@@ -223,11 +227,13 @@ except: print('\033[1;31mအကောင့်များ မရှိသေး
 "
         echo ""
         echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-        echo -ne "\033[1;33m◈ ပြင်ဆင်လိုသော အကောင့်နံပါတ်ကို ရွေးပါ: \033[1;37m"; read num
+        echo -e "\033[1;33m👇 ပြင်ဆင်လိုသော အကောင့်၏ 'နံပါတ်' ကို အောက်တွင် ရွေးချယ်ပါ 👇\033[0m"
+        read -p "➔ နံပါတ်ရိုက်ထည့်ပါ : " num
         if [[ "$num" =~ ^[0-9]+$ ]]; then
             echo ""
-            echo -e "\033[1;36m[မှတ်ချက်] - ရက်ပေါင်း (ဥပမာ 30) လို့ရိုက်နိုင်သလို၊ ရက်စွဲအတိအကျ (ဥပမာ 5-4-2026) လို့လည်း ရိုက်ထည့်နိုင်ပါတယ်။\033[0m"
-            echo -ne "\033[1;33m◈ တိုးလိုသော ရက် (သို့) ရက်စွဲ အတိအကျ: \033[1;37m"; read dias
+            echo -e "\033[1;36m[မှတ်ချက်] - ရက်ပေါင်း (ဥပမာ 30) (သို့) ရက်စွဲအတိအကျ (ဥပမာ 5-4-2026) ရိုက်ထည့်နိုင်ပါတယ်။\033[0m"
+            echo -e "\033[1;33m👇 တိုးလိုသော ရက် (သို့) ရက်စွဲ အတိအကျကို အောက်တွင် ရိုက်ထည့်ပါ 👇\033[0m"
+            read -p "➔ ရိုက်ထည့်ရန် : " dias
             renewed_user=$(python3 <<EOF
 import json, os
 from datetime import datetime, timedelta
