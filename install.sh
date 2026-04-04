@@ -90,6 +90,22 @@ fi
 [ -f "$USERS" ] || echo "[]" > "$USERS"
 chmod 644 "$CFG" "$USERS"
 
+# DOMAIN PROMPT
+echo ""
+echo -e "${C}────────────────────────────────────────────────────────${Z}"
+echo -e "${Y}🌐 Domain ထည့်သွင်းလိုပါသလား? (Y/n)${Z}"
+read -p "ရွေးချယ်ရန်: " insert_domain
+if [[ "${insert_domain,,}" == "y" || "${insert_domain,,}" == "yes" ]]; then
+    read -p "Domain ကို ရိုက်ထည့်ပါ (ဥပမာ - dtac.gamemobile.com): " my_domain
+    echo "$my_domain" > /etc/domain
+    echo -e "${G}✅ Domain အောင်မြင်စွာ မှတ်သားပြီးပါပြီ!${Z}"
+else
+    echo "No-Domain" > /etc/domain
+    echo -e "${Y}⚠️ Domain မထည့်သွင်းပါ။ (No-Domain) အဖြစ်သတ်မှတ်ပါမည်။${Z}"
+fi
+echo -e "${C}────────────────────────────────────────────────────────${Z}"
+echo ""
+
 cat >/etc/systemd/system/zivpn.service <<'EOF'
 [Unit]
 Description=ZIVPN UDP Server
