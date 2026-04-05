@@ -17,7 +17,7 @@ for u in users:
     exp = u.get('expires'); is_valid = True
     if exp:
         try:
-            if datetime.strptime(exp, '%Y-%m-%d').date() < datetime.now().date(): is_valid = False
+            if datetime.strptime(exp.strip(), '%Y-%m-%d').date() < datetime.now().date(): is_valid = False
         except: pass
     if is_valid and u.get('password'): valid.add(str(u['password']))
 if 'auth' not in cfg or not type(cfg['auth']) is dict: cfg['auth'] = {}
@@ -80,7 +80,7 @@ try:
         exp = u.get('expires')
         if exp:
             try:
-                exp_date = datetime.strptime(exp, '%Y-%m-%d').date()
+                exp_date = datetime.strptime(exp.strip(), '%Y-%m-%d').date()
                 if exp_date < today: e += 1
                 elif exp_date == today: tdy += 1
             except: pass
@@ -103,7 +103,6 @@ echo ""
 
 _e_clean=$(echo $_userexp | tr -d ' ')
 if [[ "$_todayexp" != "0" ]] || [[ "$_e_clean" != "0" ]]; then
-    # နောက်မှာ 'ယောက်' စာသားပါအောင် ပြင်ထားပါသည်
     echo -e "    \033[1;33m⚠️ ယနေ့ကုန်မည်: $_todayexp ယောက် \033[1;37m| \033[1;31m🔴 သက်တမ်းလွန်: $_e_clean ယောက် \033[0m"
     echo ""
 fi
@@ -237,7 +236,7 @@ EOF
     3)
         clear
         echo -e "\E[42;1;37m      RENEW / EDIT ZIVPN UDP ACCOUNT       \E[0m\n"
-        # ဤနေရာတွင် အကောင့်အရောင်ခွဲစနစ် အသစ်ထည့်ထားပါသည်
+        # ဤနေရာတွင် အကောင့်တစ်ခုလုံး အဝါ/အနီ ပြောင်းမည့်စနစ် သေချာပြင်ထားပါသည်
         python3 -c "
 import json
 from datetime import datetime
@@ -248,21 +247,21 @@ try:
     else:
         today = datetime.now().date()
         for i, u in enumerate(users):
-            user = u.get('user')
-            exp = u.get('expires')
+            user = u.get('user', '')
+            exp = u.get('expires', '')
             if not exp:
-                print(f'\033[1;33m[{i+1}] \033[1;37m{user} \033[1;36m(Exp: None)\033[0m')
+                print(f'\033[1;37m[{i+1}] {user} (Exp: None)\033[0m')
                 continue
             try:
-                dt = datetime.strptime(exp, '%Y-%m-%d').date()
+                dt = datetime.strptime(exp.strip(), '%Y-%m-%d').date()
                 if dt < today:
-                    print(f'\033[1;33m[{i+1}] \033[1;31m{user} \033[1;36m(Exp: {exp})\033[0m')
+                    print(f'\033[1;31m[{i+1}] {user} (Exp: {exp}) - 🔴 သက်တမ်းလွန်\033[0m')
                 elif dt == today:
-                    print(f'\033[1;33m[{i+1}] \033[1;33m{user} \033[1;36m(Exp: {exp})\033[0m')
+                    print(f'\033[1;33m[{i+1}] {user} (Exp: {exp}) - ⚠️ ယနေ့ကုန်မည်\033[0m')
                 else:
-                    print(f'\033[1;33m[{i+1}] \033[1;37m{user} \033[1;36m(Exp: {exp})\033[0m')
+                    print(f'\033[1;36m[{i+1}] \033[1;37m{user} \033[1;36m(Exp: {exp})\033[0m')
             except:
-                print(f'\033[1;33m[{i+1}] \033[1;37m{user} \033[1;36m(Exp: {exp})\033[0m')
+                print(f'\033[1;37m[{i+1}] {user} (Exp: {exp})\033[0m')
 except: print('\033[1;31mအကောင့်များ မရှိသေးပါ။\033[0m')
 "
         echo ""
@@ -340,6 +339,7 @@ EOF
     4)
         clear
         echo -e "\E[44;1;37m                   ZIVPN ACCOUNT LIST                   \E[0m\n"
+        # စာရင်းစစ်တဲ့ ဇယားကိုပါ အရောင်ကွဲအောင် ထည့်ထားပေးပါသည်
         python3 -c "
 import json
 from datetime import datetime
@@ -351,17 +351,24 @@ try:
     if not users:
         print('\033[1;31m   အကောင့်များ မရှိသေးပါ။ (No users found)\033[0m')
     else:
+        today = datetime.now().date()
         for u in users:
             user = u.get('user', '')
             pwd = u.get('password', '')
             exp = u.get('expires', '')
             status = '\033[1;32mActive\033[0m'
+            color = '\033[1;37m'
             if exp:
                 try:
-                    if datetime.strptime(exp, '%Y-%m-%d').date() < datetime.now().date():
+                    exp_date = datetime.strptime(exp.strip(), '%Y-%m-%d').date()
+                    if exp_date < today:
                         status = '\033[1;31mExpired\033[0m'
+                        color = '\033[1;31m'
+                    elif exp_date == today:
+                        status = '\033[1;33mToday\033[0m'
+                        color = '\033[1;33m'
                 except: pass
-            print('\033[1;37m{:<15} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[0m {}'.format(user, pwd, exp, status))
+            print('{}{:<15} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[0m {}'.format(color, user, pwd, exp, status))
 except:
     print('\033[1;31m   အကောင့်များ မရှိသေးပါ။\033[0m')
 print('\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m')
@@ -398,12 +405,12 @@ try:
         exp = u.get('expires', '')
         if exp:
             try:
-                exp_date = datetime.strptime(exp, '%Y-%m-%d').date()
+                exp_date = datetime.strptime(exp.strip(), '%Y-%m-%d').date()
                 if exp_date < today:
-                    print('\033[1;37m{:<15} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[1;31m 🔴 သက်တမ်းလွန် (Expired)\033[0m'.format(user, exp))
+                    print('\033[1;31m{:<15} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[1;31m 🔴 သက်တမ်းလွန် (Expired)\033[0m'.format(user, exp))
                     found = True
                 elif exp_date == today:
-                    print('\033[1;37m{:<15} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[1;33m ⚠️ ယနေ့ကုန်မည် (Today)\033[0m'.format(user, exp))
+                    print('\033[1;33m{:<15} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[1;33m ⚠️ ယနေ့ကုန်မည် (Today)\033[0m'.format(user, exp))
                     found = True
             except: pass
     if not found:
