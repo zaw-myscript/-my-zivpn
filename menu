@@ -31,7 +31,6 @@ os.rename(cfile+'.tmp', cfile)
 
 IP=$(cat /etc/IP 2>/dev/null || wget -qO- ipv4.icanhazip.com 2>/dev/null)
 
-# 🔴 DOMAIN ပြန်ဖတ်မည့်စနစ် 🔴
 if [[ -f /etc/domain ]]; then
     HOST_DOMAIN=$(cat /etc/domain | tr -d '\r' | tr -d '\n' | tr -d ' ')
     if [[ -z "$HOST_DOMAIN" || "$HOST_DOMAIN" == "No-Domain" ]]; then
@@ -75,20 +74,25 @@ try:
     with open('/etc/zivpn/users.json', 'r') as f: users = json.load(f)
     t = len(users)
     e = 0
+    tdy = 0
+    today = datetime.now().date()
     for u in users:
         exp = u.get('expires')
         if exp:
             try:
-                if datetime.strptime(exp, '%Y-%m-%d').date() < datetime.now().date(): e += 1
+                exp_date = datetime.strptime(exp, '%Y-%m-%d').date()
+                if exp_date < today: e += 1
+                elif exp_date == today: tdy += 1
             except: pass
     a = t - e
-    print(f'{a} {e} {t}')
+    print(f'{a} {e} {t} {tdy}')
 except:
-    print('0 0 0')
+    print('0 0 0 0')
 ")
 _onlin=$(printf '%-5s' "$(echo $stats | awk '{print $1}')")
 _userexp=$(printf '%-5s' "$(echo $stats | awk '{print $2}')")
 _tuser=$(echo $stats | awk '{print $3}')
+_todayexp=$(echo $stats | awk '{print $4}')
 
 clear
 echo -e "           \033[38;5;226m███████████████████████████████\033[0m"
@@ -96,6 +100,13 @@ echo -e "           \033[38;5;40m██████████████\033[
 echo -e "           \033[38;5;196m███████████████████████████████\033[0m"
 echo -e "           \033[38;5;208m████████████\033[1;37m Z I V \033[38;5;208m████████████\033[0m"
 echo ""
+
+_e_clean=$(echo $_userexp | tr -d ' ')
+if [[ "$_todayexp" != "0" ]] || [[ "$_e_clean" != "0" ]]; then
+    echo -e "     \033[1;41;37m ⚠️ သတိပေးချက် - ယနေ့ကုန်မည်: $_todayexp ယောက် | ကုန်ဆုံးပြီး: $_e_clean ယောက် \033[0m"
+    echo ""
+fi
+
 echo -e "\033[1;36m╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮\033[0m"
 echo -e "\033[1;36m┃\033[0;36m \033[1;35m✦ \E[44;1;37m ZIVPN UDP MANAGER Edit:@Zaw-ZivpnUdp-Script \E[0m\033[1;35m✦ \033[1;36m┃\033[0m"
 echo -e "\033[1;36m┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫\033[0m"
