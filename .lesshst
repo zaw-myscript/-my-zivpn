@@ -1,5 +1,5 @@
 #!/bin/bash
-# ZIVPN UDP Server + CLI Menu + Network Optimization
+# ZIVPN UDP Server + CLI Menu + Network Optimization + Smart Auto-Kick
 set -euo pipefail
 
 B="\e[1;34m"; G="\e[1;32m"; Y="\e[1;33m"; R="\e[1;31m"; C="\e[1;36m"; Z="\e[0m"
@@ -46,7 +46,7 @@ apt_guard_end(){
 echo -e "${Y}📦 Packages များ တင်သွင်းနေပါသည်...${Z}"
 apt_guard_start
 apt-get update -y -o APT::Update::Post-Invoke-Success::= -o APT::Update::Post-Invoke::= >/dev/null
-apt-get install -y curl ufw jq python3 iproute2 conntrack ca-certificates >/dev/null
+apt-get install -y curl ufw jq python3 iproute2 conntrack ca-certificates cron >/dev/null
 apt_guard_end
 
 systemctl stop zivpn.service 2>/dev/null || true
@@ -97,7 +97,6 @@ echo -e "${Y}🌐 Domain ထည့်သွင်းလိုပါသလား?
 read -p "➔ ရွေးချယ်ရန်: " insert_domain
 if [[ "${insert_domain,,}" == "y" || "${insert_domain,,}" == "yes" ]]; then
     read -p "➔ Domain ကို ရိုက်ထည့်ပါ (ဥပမာ - dtac.gamemobile.com): " raw_domain
-    # Space တွေပါသွားရင် ဖယ်ထုတ်ပြီး သေချာသိမ်းမည်
     my_domain=$(echo "$raw_domain" | tr -d ' ' | tr -d '\r' | tr -d '\n')
     echo "$my_domain" > /etc/domain
     chmod 777 /etc/domain
@@ -159,6 +158,56 @@ ufw reload >/dev/null 2>&1 || true
 echo -e "${Y}📋 CLI Menu ထည့်သွင်းနေပါသည်...${Z}"
 wget -qO /usr/bin/menu "https://raw.githubusercontent.com/zaw-myscript/-my-zivpn/main/menu"
 chmod +x /usr/bin/menu
+
+# 🔴 SMART AUTO-KICK စနစ် 🔴
+echo -e "${Y}⏱️ Smart Auto-Kick (အလိုအလျောက် သော့ပိတ်စနစ်) ထည့်သွင်းနေပါသည်...${Z}"
+cat > /usr/local/bin/zivpn_autokick.sh << 'EOF'
+#!/bin/bash
+python3 -c "
+import json, sys, os
+from datetime import datetime
+ufile = '/etc/zivpn/users.json'
+cfile = '/etc/zivpn/config.json'
+try:
+    with open(ufile, 'r') as f: users = json.load(f)
+except: sys.exit(0)
+try:
+    with open(cfile, 'r') as f: cfg = json.load(f)
+except: cfg = {}
+
+valid = set()
+today = datetime.now().date()
+for u in users:
+    exp = u.get('expires')
+    is_valid = True
+    if exp:
+        try:
+            if datetime.strptime(exp.strip(), '%Y-%m-%d').date() < today: is_valid = False
+        except: pass
+    if is_valid and u.get('password'): valid.add(str(u['password']))
+
+if 'auth' not in cfg or not type(cfg['auth']) is dict: cfg['auth'] = {}
+current_config = cfg['auth'].get('config', [])
+new_config = sorted(list(valid))
+
+# ပြောင်းလဲမှုရှိမှသာ Update လုပ်ပြီး Restart ချရန် အချက်ပြမည်
+if current_config != new_config:
+    cfg['auth']['mode'] = 'passwords'
+    cfg['auth']['config'] = new_config
+    with open(cfile+'.tmp', 'w') as f: json.dump(cfg, f, indent=2)
+    os.rename(cfile+'.tmp', cfile)
+    sys.exit(1)
+else:
+    sys.exit(0)
+"
+# ပြောင်းလဲမှုရှိကြောင်း အချက်ပြမှသာ ZIVPN Service ကို Restart လုပ်ပါမည်
+if [ $? -eq 1 ]; then
+    systemctl restart zivpn.service > /dev/null 2>&1
+fi
+EOF
+chmod +x /usr/local/bin/zivpn_autokick.sh
+(crontab -l 2>/dev/null | grep -v "zivpn_autokick.sh" ; echo "0 * * * * /usr/local/bin/zivpn_autokick.sh") | crontab -
+/usr/local/bin/zivpn_autokick.sh
 
 systemctl daemon-reload
 systemctl enable --now zivpn.service
