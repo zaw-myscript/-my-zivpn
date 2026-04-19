@@ -1,5 +1,5 @@
 #!/bin/bash
-# ZAW ZIVPN UDP MANAGER (PREMIUM + FULL TABLES WITH PASSWORD + ONLINE FIX)
+# ZAW ZIVPN UDP MANAGER (PREMIUM + PASSWORD-BASED AUTO-BAN FIX)
 
 trap ' ' INT
 set +e
@@ -33,27 +33,29 @@ os.rename(cfile+'.tmp', cfile)
    systemctl restart zivpn.service > /dev/null 2>&1
 }
 
-# === ⚙️ AUTO-BAN (ZLIMIT) INSTALLATION (Update For UDP Logs) ===
-if [ ! -f "/usr/bin/zlimit" ] || grep -q "1 minute ago" "/usr/bin/zlimit"; then
-    echo -e "\033[1;33m  [*] ⚙️ ZIVPN Anti-Share (Auto-Ban) စနစ်ကို Update လုပ်နေပါသည်...\033[0m"
+# === ⚙️ AUTO-BAN (ZLIMIT) INSTALLATION (BUG FIXED: TRACK BY PASSWORD) ===
+if [ ! -f "/usr/bin/zlimit" ] || ! grep -q "pwd" "/usr/bin/zlimit"; then
+    echo -e "\033[1;33m  [*] ⚙️ ZIVPN Anti-Share (Auto-Ban) စနစ် အသစ်ကို Update လုပ်နေပါသည်...\033[0m"
     cat > /usr/bin/zlimit << 'EOF'
 #!/bin/bash
 DB="/etc/zivpn/users.json"
 BAN_LOG="/var/log/zivpn_ban.log"
 while true; do
-    log_data=$(journalctl -u zivpn --since "10 minutes ago" 2>/dev/null)
+    # နောက်ကြောင်း ၃ မိနစ်စာကို အမြဲစစ်မည်
+    log_data=$(journalctl -u zivpn --since "3 minutes ago" --no-pager 2>/dev/null)
     if [ -s "$DB" ]; then
-        jq -r '.[] | "\(.user) \(.limit // 1)"' "$DB" | while read -r user limit; do
-            ip_count=$(echo "$log_data" | grep -i "$user" | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | sort | uniq | wc -l)
+        jq -r '.[] | "\(.user) \(.password) \(.limit // 1)"' "$DB" | while read -r user pwd limit; do
+            # ZIVPN က Password ကိုသာ သိသဖြင့်၊ Log ထဲတွင် Password ကိုရှာ၍ IP ထုတ်ယူမည်
+            ip_count=$(echo "$log_data" | grep -F "$pwd" | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | sort | uniq | wc -l)
             if [ "$ip_count" -gt "$limit" ]; then
                 jq --arg u "$user" 'del(.[] | select(.user == $u))' "$DB" > /tmp/tmp_z.json && mv /tmp/tmp_z.json "$DB"
                 systemctl restart zivpn
-                echo "$(date +"%Y-%m-%d %H:%M:%S") - ❌ BANNED: $user (IPs: $ip_count / Limit: $limit)" >> "$BAN_LOG"
+                echo "$(date +"%Y-%m-%d %H:%M:%S") - ❌ BANNED: $user (Pass: $pwd | IPs: $ip_count / Limit: $limit)" >> "$BAN_LOG"
                 sleep 5
             fi
         done
     fi
-    sleep 30
+    sleep 20
 done
 EOF
     chmod +x /usr/bin/zlimit
@@ -68,13 +70,12 @@ Restart=always
 WantedBy=multi-user.target
 EOF
     systemctl daemon-reload && systemctl enable --now zlimit && systemctl restart zlimit
-    echo -e "\033[1;32m  ✅ Auto-Ban စနစ် အောင်မြင်စွာ အသက်ဝင်သွားပါပြီ!\033[0m"
+    echo -e "\033[1;32m  ✅ Auto-Ban စနစ် အောင်မြင်စွာ Update ဖြစ်သွားပါပြီ!\033[0m"
     sleep 2
 fi
 
 IP=$(cat /etc/IP 2>/dev/null || wget -qO- ipv4.icanhazip.com 2>/dev/null)
 
-# Domain Fix Logic
 if [[ -f /etc/domain ]]; then
     HOST_DOMAIN=$(cat /etc/domain | tr -d '\r' | tr -d '\n' | tr -d ' ')
     if [[ -z "$HOST_DOMAIN" || "$HOST_DOMAIN" == "No-Domain" || "$HOST_DOMAIN" == "$IP" ]]; then
@@ -110,7 +111,7 @@ _core=$(printf '%-1s' "$(grep -c ^processor /proc/cpuinfo)")
 _system=$(printf '%-14s' "$system")
 _hora=$(printf '%(%H:%M:%S)T')
 
-# === 📊 အကောင့်ဇယားကွက်ပြသသည့် စနစ် (Centralized Table View with Password) ===
+# === 📊 အကောင့်ဇယားကွက်ပြသသည့် စနစ် ===
 show_account_table() {
     python3 -c "
 import json
@@ -383,7 +384,6 @@ EOF
         echo -e "\033[1;36m║ \033[1;33mNO\033[1;36m ║ \033[1;33mUSERNAME\033[1;36m     ║ \033[1;33mSTATUS\033[1;36m          ║ \033[1;33mIP USAGE\033[1;36m   ║\033[0m"
         echo -e "\033[1;36m╠════╬══════════════╬═════════════════╬════════════╣\033[0m"
         
-        # ZIVPN (UDP) ၏ သဘာဝအရ ၁၀ မိနစ်စာ နောက်ကြောင်းပြန်စစ်ဆေးခြင်း
         log_data=$(journalctl -u zivpn --since "10 minutes ago" 2>/dev/null)
         
         python3 -c "
@@ -400,9 +400,8 @@ for u in users:
     limit = int(u.get('limit', 1))
     
     ip_count = 0
-    # User အမည် သို့မဟုတ် Password ပါဝင်သည့် Log များကို ရှာဖွေခြင်း
-    if user.lower() in log_data.lower() or pwd.lower() in log_data.lower():
-        lines = [line for line in log_data.split('\n') if user.lower() in line.lower() or pwd.lower() in line.lower()]
+    if pwd.lower() in log_data.lower():
+        lines = [line for line in log_data.split('\n') if pwd.lower() in line.lower()]
         import re
         ips = set()
         for line in lines:
