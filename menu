@@ -1,10 +1,9 @@
 #!/bin/bash
-# ZAW ZIVPN UDP MANAGER (RESTORED ORIGINAL UI + V3 AUTO-BAN FIX)
+# ZAW ZIVPN UDP MANAGER (CLASSIC UI + CLEAN TABLES + NO BUGGY LIMITS)
 
 trap ' ' INT
 set +e
 
-# ZIVPN UPDATE FUNCTION
 update_zivpn() {
    python3 -c "
 import json, sys, os
@@ -33,131 +32,58 @@ os.rename(cfile+'.tmp', cfile)
    systemctl restart zivpn.service > /dev/null 2>&1
 }
 
-# === ⚙️ THE ULTIMATE AUTO-BAN (ZLIMIT) V3 ===
-if [ ! -f "/usr/bin/zlimit" ] || ! grep -q "sleep 5" "/usr/bin/zlimit"; then
-    echo -e "\033[1;33m  [*] ⚙️ ZIVPN Anti-Share (V3-Fast Ban) ကို တပ်ဆင်နေပါသည်...\033[0m"
-    cat > /usr/bin/zlimit << 'EOF'
-#!/bin/bash
-DB="/etc/zivpn/users.json"
-BAN_LOG="/var/log/zivpn_ban.log"
-while true; do
-    log_data=$(journalctl -u zivpn --since "1 minute ago" --no-pager 2>/dev/null)
-    if [ -s "$DB" ]; then
-        jq -r '.[] | "\(.user) \(.password) \(.limit // 1)"' "$DB" | while read -r user pwd limit; do
-            ip_count=$(echo "$log_data" | grep -F "$pwd" | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | sort | uniq | wc -l)
-            if [ "$ip_count" -gt "$limit" ]; then
-                jq --arg u "$user" 'del(.[] | select(.user == $u))' "$DB" > /tmp/tmp_z.json && mv /tmp/tmp_z.json "$DB"
-                python3 -c "
-import json, os
-ufile = '/etc/zivpn/users.json'; cfile = '/etc/zivpn/config.json'
-try:
-    with open(ufile, 'r') as f: users = json.load(f)
-    with open(cfile, 'r') as f: cfg = json.load(f)
-    valid = [str(u['password']) for u in users if u.get('password')]
-    cfg['auth']['config'] = sorted(valid)
-    with open(cfile, 'w') as f: json.dump(cfg, f, indent=2)
-except: pass
-"
-                systemctl restart zivpn
-                echo "$(date +"%Y-%m-%d %H:%M:%S") - ❌ BANNED: $user (IPs: $ip_count / Limit: $limit)" >> "$BAN_LOG"
-            fi
-        done
-    fi
-    sleep 5
-done
-EOF
-    chmod +x /usr/bin/zlimit
-    cat > /etc/systemd/system/zlimit.service << 'EOF'
-[Unit]
-Description=ZAW ZIVPN Ultimate Auto-Ban
-After=network.target
-[Service]
-ExecStart=/usr/bin/zlimit
-Restart=always
-[Install]
-WantedBy=multi-user.target
-EOF
-    systemctl daemon-reload && systemctl enable --now zlimit && systemctl restart zlimit
-    echo -e "\033[1;32m  ✅ Ultimate Fix အောင်မြင်စွာ Update ဖြစ်သွားပါပြီ!\033[0m"
-    sleep 2
-fi
-
 IP=$(cat /etc/IP 2>/dev/null || wget -qO- ipv4.icanhazip.com 2>/dev/null)
-
 if [[ -f /etc/domain ]]; then
     HOST_DOMAIN=$(cat /etc/domain | tr -d '\r' | tr -d '\n' | tr -d ' ')
-    if [[ -z "$HOST_DOMAIN" || "$HOST_DOMAIN" == "No-Domain" || "$HOST_DOMAIN" == "$IP" ]]; then
-        HOST_DOMAIN="$IP"
-    fi
+    [[ -z "$HOST_DOMAIN" || "$HOST_DOMAIN" == "No-Domain" ]] && HOST_DOMAIN="$IP"
 else
     HOST_DOMAIN="$IP"
 fi
 
 if [[ "$(grep -c "Ubuntu" /etc/issue.net)" = "1" ]]; then
-system=$(cut -d' ' -f1 /etc/issue.net)
-system+=$(echo ' ')
-system+=$(cut -d' ' -f2 /etc/issue.net |awk -F "." '{print $1}')
+    system=$(cut -d' ' -f1 /etc/issue.net); system+=$(echo ' '); system+=$(cut -d' ' -f2 /etc/issue.net |awk -F "." '{print $1}')
 elif [[ "$(grep -c "Debian" /etc/issue.net)" = "1" ]]; then
-system=$(cut -d' ' -f1 /etc/issue.net)
-system+=$(echo ' ')
-system+=$(cut -d' ' -f3 /etc/issue.net)
+    system=$(cut -d' ' -f1 /etc/issue.net); system+=$(echo ' '); system+=$(cut -d' ' -f3 /etc/issue.net)
 else
-system=$(cut -d' ' -f1 /etc/issue.net)
+    system=$(cut -d' ' -f1 /etc/issue.net)
 fi
 
 if [[ ! -f /etc/vps_country ]]; then
-    _country=$(wget -qO- ip-api.com/line?fields=country 2>/dev/null)
-    [[ -z "$_country" ]] && _country="Unknown"
-    echo "$_country" > /etc/vps_country
+    _country=$(wget -qO- ip-api.com/line?fields=country 2>/dev/null); [[ -z "$_country" ]] && _country="Unknown"; echo "$_country" > /etc/vps_country
 fi
-_country=$(cat /etc/vps_country)
-_ip_pad=$(printf '%-15s' "$IP")
-_ram=$(printf ' %-9s' "$(free -h | grep -i mem | awk '{print $2}')")
-_usor=$(printf '%-8s' "$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')")
-_usop=$(printf '%-1s' "$(top -bn1 | awk '/Cpu/ { cpu = "" 100 - $8 "%" }; END { print cpu }')")
-_core=$(printf '%-1s' "$(grep -c ^processor /proc/cpuinfo)")
-_system=$(printf '%-14s' "$system")
-_hora=$(printf '%(%H:%M:%S)T')
+_country=$(cat /etc/vps_country); _ip_pad=$(printf '%-15s' "$IP"); _ram=$(printf ' %-9s' "$(free -h | grep -i mem | awk '{print $2}')"); _usor=$(printf '%-8s' "$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')"); _usop=$(printf '%-1s' "$(top -bn1 | awk '/Cpu/ { cpu = "" 100 - $8 "%" }; END { print cpu }')"); _core=$(printf '%-1s' "$(grep -c ^processor /proc/cpuinfo)"); _system=$(printf '%-14s' "$system"); _hora=$(printf '%(%H:%M:%S)T')
 
-# === 📊 အကောင့်ဇယားကွက်ပြသသည့် စနစ် ===
 show_account_table() {
     python3 -c "
 import json
 from datetime import datetime
 try:
     with open('/etc/zivpn/users.json', 'r') as f: users = json.load(f)
-except:
-    users = []
-
-print('\033[1;36m╔════╦══════════════╦════════════╦════════════╦═══════╦═════════════╗\033[0m')
-print('\033[1;36m║ \033[1;33mNO\033[1;36m ║ \033[1;33mUSERNAME\033[1;36m     ║ \033[1;33mPASSWORD\033[1;36m   ║ \033[1;33mEXPIRES\033[1;36m    ║ \033[1;33mLIMIT\033[1;36m ║ \033[1;33mSTATUS\033[1;36m      ║\033[0m')
-print('\033[1;36m╠════╬══════════════╬════════════╬════════════╬═══════╬═════════════╣\033[0m')
-
+except: users = []
+print('\033[1;36m╔════╦══════════════╦════════════╦════════════╦═════════════╗\033[0m')
+print('\033[1;36m║ \033[1;33mNO\033[1;36m ║ \033[1;33mUSERNAME\033[1;36m     ║ \033[1;33mPASSWORD\033[1;36m   ║ \033[1;33mEXPIRES\033[1;36m    ║ \033[1;33mSTATUS\033[1;36m      ║\033[0m')
+print('\033[1;36m╠════╬══════════════╬════════════╬════════════╬═════════════╣\033[0m')
 if not users:
-    print('\033[1;31m║                  အကောင့်များ မရှိသေးပါ။ (No users found)                  ║\033[0m')
+    print('\033[1;31m║                 အကောင့်များ မရှိသေးပါ။ (No users found)                ║\033[0m')
 else:
     today = datetime.now().date()
     for i, u in enumerate(users, 1):
-        user = str(u.get('user', ''))[:12]
-        pwd = str(u.get('password', ''))[:10]
-        exp = str(u.get('expires', ''))
-        limit = str(u.get('limit', '1'))
-        status = '\033[1;32m✅ Active \033[0m'
-        color = '\033[1;37m'
+        user = str(u.get('user', ''))[:12]; pwd = str(u.get('password', ''))[:10]; exp = str(u.get('expires', '')); status = '\033[1;32m✅ Active \033[0m'; color = '\033[1;37m'
         if exp:
             try:
                 exp_date = datetime.strptime(exp.strip(), '%Y-%m-%d').date()
-                if exp_date < today:
-                    status = '\033[1;31m❌ Expired\033[0m'
-                    color = '\033[1;31m'
-                elif exp_date == today:
-                    status = '\033[1;33m⚠️ Today  \033[0m'
-                    color = '\033[1;33m'
+                if exp_date < today: status = '\033[1;31m❌ Expired\033[0m'; color = '\033[1;31m'
+                elif exp_date == today: status = '\033[1;33m⚠️ Today  \033[0m'; color = '\033[1;33m'
             except: pass
-        print('\033[1;36m║ \033[1;35m{:02d} \033[1;36m║ {}{:<12} \033[1;36m║ \033[1;37m{:<10} \033[1;36m║ {}{:<10} \033[1;36m║ \033[1;37m{:<5} \033[1;36m║ {}\033[1;36m ║\033[0m'.format(i, color, user, pwd, color, exp, limit, status))
-print('\033[1;36m╚════╩══════════════╩════════════╩════════════╩═══════╩═════════════╝\033[0m')
+        print('\033[1;36m║ \033[1;35m{:02d} \033[1;36m║ {}{:<12} \033[1;36m║ \033[1;37m{:<10} \033[1;36m║ {}{:<10} \033[1;36m║ {}\033[1;36m ║\033[0m'.format(i, color, user, pwd, color, exp, status))
+print('\033[1;36m╚════╩══════════════╩════════════╩════════════╩═════════════╝\033[0m')
 "
 }
+
+# နောက်ကွယ်က Limit cron job များရှိပါက ဖြုတ်ပစ်မည်
+systemctl stop zlimit 2>/dev/null
+systemctl disable zlimit 2>/dev/null
+rm -f /usr/bin/zlimit /etc/systemd/system/zlimit.service
 
 while true; do
 stats=$(python3 -c "
@@ -165,10 +91,7 @@ import json
 from datetime import datetime
 try:
     with open('/etc/zivpn/users.json', 'r') as f: users = json.load(f)
-    t = len(users)
-    e = 0
-    tdy = 0
-    today = datetime.now().date()
+    t = len(users); e = 0; tdy = 0; today = datetime.now().date()
     for u in users:
         exp = u.get('expires')
         if exp:
@@ -177,22 +100,16 @@ try:
                 if exp_date < today: e += 1
                 elif exp_date == today: tdy += 1
             except: pass
-    a = t - e
-    print(f'{a} {e} {t} {tdy}')
-except:
-    print('0 0 0 0')
+    print(f'{t-e} {e} {t} {tdy}')
+except: print('0 0 0 0')
 ")
-_onlin=$(printf '%-5s' "$(echo $stats | awk '{print $1}')")
-_userexp=$(printf '%-5s' "$(echo $stats | awk '{print $2}')")
-_tuser=$(echo $stats | awk '{print $3}')
-_todayexp=$(echo $stats | awk '{print $4}')
+_onlin=$(printf '%-5s' "$(echo $stats | awk '{print $1}')"); _userexp=$(printf '%-5s' "$(echo $stats | awk '{print $2}')"); _tuser=$(echo $stats | awk '{print $3}'); _todayexp=$(echo $stats | awk '{print $4}')
 
 clear
 echo -e "           \033[38;5;226m███████████████████████████████\033[0m"
 echo -e "           \033[38;5;40m██████████████\033[1;37m ★ \033[38;5;40m██████████████\033[0m"
 echo -e "           \033[38;5;196m███████████████████████████████\033[0m"
-echo -e "           \033[38;5;208m████████████\033[1;37m Z I V \033[38;5;208m████████████\033[0m"
-echo ""
+echo -e "           \033[38;5;208m████████████\033[1;37m Z I V \033[38;5;208m████████████\033[0m\n"
 
 _e_clean=$(echo $_userexp | tr -d ' ')
 if [[ "$_todayexp" != "0" ]] || [[ "$_e_clean" != "0" ]]; then
@@ -215,11 +132,10 @@ echo -e "\033[1;36m╰━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo -e "\033[1;35m[\033[1;36m1\033[1;35m] \033[1;32m◈ \033[1;37mအကောင့်ဖန်တီးရန် (CREATE ACCOUNT)"
 echo -e "\033[1;35m[\033[1;36m2\033[1;35m] \033[1;32m◈ \033[1;37mအကောင့်ဖျက်ရန် (DELETE ACCOUNT)"
-echo -e "\033[1;35m[\033[1;36m3\033[1;35m] \033[1;32m◈ \033[1;37mသက်တမ်းတိုး/ပြင်ရန် (RENEW ACCOUNT)"
+echo -e "\033[1;35m[\033[1;36m3\033[1;35m] \033[1;32m◈ \033[1;37mသက်တမ်းတိုးရန် / ပြင်ရန် (RENEW / EDIT ACCOUNT)"
 echo -e "\033[1;35m[\033[1;36m4\033[1;35m] \033[1;32m◈ \033[1;37mအကောင့်စာရင်းစစ်ရန် (LIST USERS)"
-echo -e "\033[1;35m[\033[1;36m5\033[1;35m] \033[1;32m◈ \033[1;36m🌐 Online / Offline ဇယားကြည့်ရန်\033[0m"
-echo -e "\033[1;35m[\033[1;36m6\033[1;35m] \033[1;32m◈ \033[1;31m🚫 Auto-Ban မှတ်တမ်းကြည့်ရန်\033[0m"
-echo -e "\033[1;35m[\033[1;36m7\033[1;35m] \033[1;32m◈ \033[1;33m📝 Domain ကို ကိုယ်တိုင်ပြင်မည်\033[0m"
+echo -e "\033[1;35m[\033[1;36m5\033[1;35m] \033[1;32m◈ \033[1;34mAdmin သို့ ဆက်သွယ်ရန် (CONTACT ADMIN)"
+echo -e "\033[1;35m[\033[1;36m6\033[1;35m] \033[1;32m◈ \033[1;33mသက်တမ်းကုန်/လွန် စာရင်း (EXPIRED LIST)\033[0m"
 echo -e "\033[1;35m[\033[1;36m0\033[1;35m] \033[1;32m◈ \033[1;31mထွက်မည် (EXIT)"
 echo ""
 echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -228,103 +144,33 @@ echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━�
 read -p "➔ ရွေးချယ်ရန် နံပါတ်: " opt
 
 case $opt in
-    1)
-        clear
-        echo -e "\E[44;1;37m        CREATE ZIVPN UDP ACCOUNT         \E[0m"
-        echo ""
-        read -p "◈ Username    : " nome
-        if [[ -z "$nome" ]]; then continue; fi
-        read -p "◈ Password    : " senha
-        read -p "◈ Expire Days : " dias
-        read -p "◈ IP Limit (ဖုန်းဘယ်နှစ်လုံးလဲ) : " limit
-        [[ -z "$limit" ]] && limit=1
-        
-        useradd -M -s /bin/false "$nome" > /dev/null 2>&1 || true
-        echo "$nome:$senha" | chpasswd > /dev/null 2>&1 || true
-        
-        python3 -c "
+    1) clear; echo -e "\E[44;1;37m        CREATE ZIVPN UDP ACCOUNT         \E[0m\n"; read -p "◈ Username    : " nome; [[ -z "$nome" ]] && continue; read -p "◈ Password    : " senha; read -p "◈ Expire Days : " dias; useradd -M -s /bin/false "$nome" > /dev/null 2>&1 || true; echo "$nome:$senha" | chpasswd > /dev/null 2>&1 || true; python3 -c "
 import json, sys, os
 from datetime import datetime, timedelta
-user = '$nome'; password = '$senha'; days = int('$dias'); limit = int('$limit')
-expires = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d')
-ufile = '/etc/zivpn/users.json'
+user = '$nome'; password = '$senha'; days = int('$dias'); expires = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d'); ufile = '/etc/zivpn/users.json'
 try:
     with open(ufile, 'r') as f: users = json.load(f)
 except: users = []
 replaced = False
 for u in users:
-    if u.get('user','').lower() == user.lower():
-        u['password'] = password; u['expires'] = expires; u['limit'] = limit; replaced = True; break
-if not replaced: users.append({'user':user, 'password':password, 'expires':expires, 'limit':limit})
-with open(ufile+'.tmp', 'w') as f: json.dump(users, f, indent=2)
-os.rename(ufile+'.tmp', ufile)
-"
-        update_zivpn
-        validade2=$(date '+%d/%m/%Y' -d " +$dias days")
-        
-        clear
-        echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-        echo -e "\033[1;32m🚀Thu Ya Zaw🚀 ZiVPN UDP အကောင့်ဖန်တီးပြီးပါပြီ\033[0m"
-        echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-        echo -e "\033[1;33m◈📡 Host / IP   :⪧  \033[1;37m$IP\033[0m"
-        if [ "$HOST_DOMAIN" != "$IP" ]; then
-            echo -e "\033[1;33m◈🌐 Domain      :⪧ \033[1;37m$HOST_DOMAIN\033[0m"
-        fi
-        echo -e "\033[1;33m◈🧸 Username    :⪧ \033[1;37m$nome\033[0m"
-        echo -e "\033[1;33m◈🔏 Password    :⪧ \033[1;37m$senha\033[0m"
-        echo -e "\033[1;33m◈📱 IP Limit    :⪧ \033[1;37m$limit Devices\033[0m"
-        echo -e "\033[1;33m◈🕰 Expire Date :⪧ \033[1;37m$validade2\033[0m"
-        echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-        read -n 1 -s -r -p "Press any key to return..."
-        ;;
-    2)
-        clear
-        echo -e "\E[41;1;37m        DELETE ZIVPN UDP ACCOUNT         \E[0m\n"
-        show_account_table
-        echo ""
-        read -p "➔ ဖျက်လိုသော အကောင့်နံပါတ်ကို ရွေးပါ : " num
-        if [[ -z "$num" ]]; then continue; fi
-        if [[ "$num" =~ ^[0-9]+$ ]]; then
-            deleted_user=$(python3 <<EOF
+    if u.get('user','').lower() == user.lower(): u['password'] = password; u['expires'] = expires; replaced = True; break
+if not replaced: users.append({'user':user, 'password':password, 'expires':expires})
+with open(ufile+'.tmp', 'w') as f: json.dump(users, f, indent=2); os.rename(ufile+'.tmp', ufile)
+"; update_zivpn; validade2=$(date '+%d/%m/%Y' -d " +$dias days"); clear; echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; echo -e "\033[1;32m🚀Thu Ya Zaw🚀 ZiVPN UDPအကောင့်ဖန်တီးပြီးပါပြီခင်ဗျာ\033[0m"; echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; echo -e "\033[1;31m            🔻🔻🔻🔻🔻🔻\033[0m\n"; echo -e "\033[1;33m◈📡 Host / IP   :⪧  \033[1;37m$IP\033[0m\n"; echo -e "\033[1;33m◈Domain :⪧ \033[1;37m$HOST_DOMAIN\033[0m\n"; echo -e "\033[1;33m◈🧸 Username :⪧ \033[1;37m$nome\033[0m\n"; echo -e "\033[1;33m◈🔏 Password :⪧ \033[1;37m$senha\033[0m\n"; echo -e "\033[1;33m◈🕰 Expire Date :⪧ \033[1;37m$validade2\033[0m\n"; echo -e "\033[1;36m           ◈Facebook :⪧လင့်◈\033[0m"; echo -e "\033[1;32m            🔰🔰🔰🔰🔰🔰🔰\033[0m"; echo -e "\033[1;34m https://www.facebook.com/share/1CFG2UQzrD/ \033[0m"; echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; read -n 1 -s -r -p "Press any key to return..." ;;
+    2) clear; echo -e "\E[41;1;37m        DELETE ZIVPN UDP ACCOUNT         \E[0m\n"; show_account_table; echo ""; read -p "➔ ဖျက်လိုသော အကောင့်နံပါတ်ကို ရွေးပါ : " num; [[ -z "$num" ]] && continue; if [[ "$num" =~ ^[0-9]+$ ]]; then deleted_user=$(python3 <<EOF
 import json, os
 ufile = '/etc/zivpn/users.json'
 try:
     with open(ufile, 'r') as f: users = json.load(f)
     idx = int('$num') - 1
     if 0 <= idx < len(users):
-        user = users[idx].get('user')
-        new_users = [u for i, u in enumerate(users) if i != idx]
-        with open(ufile+'.tmp', 'w') as f: json.dump(new_users, f, indent=2)
-        os.rename(ufile+'.tmp', ufile)
-        print(user)
-    else:
-        print('INVALID')
-except:
-    print('ERROR')
+        user = users[idx].get('user'); new_users = [u for i, u in enumerate(users) if i != idx]
+        with open(ufile+'.tmp', 'w') as f: json.dump(new_users, f, indent=2); os.rename(ufile+'.tmp', ufile); print(user)
+    else: print('INVALID')
+except: print('ERROR')
 EOF
-)
-            if [[ "$deleted_user" != "INVALID" && "$deleted_user" != "ERROR" ]]; then
-                update_zivpn
-                userdel "$deleted_user" > /dev/null 2>&1 || true
-                echo -e "\n\033[1;32m✅ Account '$deleted_user' ကို အောင်မြင်စွာ ဖျက်ပစ်လိုက်ပါပြီ!\033[0m"
-            else
-                echo -e "\n\033[1;31mနံပါတ်မှားယွင်းနေပါသည်။\033[0m"
-            fi
-            read -n 1 -s -r -p "Press any key to return..."
-        fi
-        ;;
-    3)
-        clear
-        echo -e "\E[42;1;37m      RENEW / EDIT ZIVPN UDP ACCOUNT       \E[0m\n"
-        show_account_table
-        echo ""
-        read -p "➔ ပြင်ဆင်လိုသော နံပါတ်ရိုက်ထည့်ပါ : " num
-        if [[ -z "$num" ]]; then continue; fi
-        if [[ "$num" =~ ^[0-9]+$ ]]; then
-            echo -e "\n\033[1;33m👇 တိုးလိုသော ရက် (သို့) ရက်စွဲ အတိအကျကို ရိုက်ထည့်ပါ\033[0m"
-            read -p "➔ ရိုက်ထည့်ရန် : " dias
-            if [[ -z "$dias" ]]; then continue; fi
-            renewed_user=$(python3 <<EOF
+); if [[ "$deleted_user" != "INVALID" && "$deleted_user" != "ERROR" ]]; then update_zivpn; userdel "$deleted_user" > /dev/null 2>&1 || true; echo -e "\n\033[1;32m✅ Account '$deleted_user' ကို အောင်မြင်စွာ ဖျက်ပစ်လိုက်ပါပြီ!\033[0m"; else echo -e "\n\033[1;31mနံပါတ်မှားယွင်းနေပါသည်။\033[0m"; fi; read -n 1 -s -r -p "Press any key to return..."; fi ;;
+    3) clear; echo -e "\E[42;1;37m      RENEW / EDIT ZIVPN UDP ACCOUNT       \E[0m\n"; show_account_table; echo ""; read -p "➔ ပြင်ဆင်လိုသော နံပါတ်ရိုက်ထည့်ပါ : " num; [[ -z "$num" ]] && continue; if [[ "$num" =~ ^[0-9]+$ ]]; then echo -e "\n\033[1;36m[မှတ်ချက်] - ရက်ပေါင်း (ဥပမာ 30) (သို့) ရက်စွဲအတိအကျ (ဥပမာ 5-4-2026) ရိုက်ထည့်နိုင်ပါတယ်။\033[0m"; echo -e "\033[1;33m👇 တိုးလိုသော ရက် (သို့) ရက်စွဲ အတိအကျကို အောက်တွင် ရိုက်ထည့်ပါ 👇\033[0m"; read -p "➔ ရိုက်ထည့်ရန် : " dias; [[ -z "$dias" ]] && continue; renewed_user=$(python3 <<EOF
 import json, os
 from datetime import datetime, timedelta
 ufile = '/etc/zivpn/users.json'
@@ -332,135 +178,62 @@ try:
     with open(ufile, 'r') as f: users = json.load(f)
     idx = int('$num') - 1
     if 0 <= idx < len(users):
-        user = users[idx].get('user')
-        input_val = '$dias'.strip().replace('/', '-')
-        
+        user = users[idx].get('user'); input_val = '$dias'.strip().replace('/', '-')
         if '-' in input_val:
             parts = input_val.split('-')
             try:
-                if len(parts[0]) == 4:
-                    new_exp = datetime.strptime(input_val, '%Y-%m-%d').strftime('%Y-%m-%d')
-                else:
-                    new_exp = datetime.strptime(input_val, '%d-%m-%Y').strftime('%Y-%m-%d')
+                new_exp = datetime.strptime(input_val, '%Y-%m-%d').strftime('%Y-%m-%d') if len(parts[0]) == 4 else datetime.strptime(input_val, '%d-%m-%Y').strftime('%Y-%m-%d')
                 users[idx]['expires'] = new_exp
-            except:
-                print('INVALID_DATE')
-                exit(0)
+            except: print('INVALID_DATE'); exit(0)
         else:
-            days = int(input_val)
-            old_exp = users[idx].get('expires', datetime.now().strftime('%Y-%m-%d'))
+            days = int(input_val); old_exp = users[idx].get('expires', datetime.now().strftime('%Y-%m-%d'))
             try:
-                dt = datetime.strptime(old_exp, '%Y-%m-%d')
-                if dt.date() < datetime.now().date(): dt = datetime.now()
+                dt = datetime.strptime(old_exp, '%Y-%m-%d'); dt = datetime.now() if dt.date() < datetime.now().date() else dt
             except: dt = datetime.now()
-            new_exp = (dt + timedelta(days=days)).strftime('%Y-%m-%d')
-            users[idx]['expires'] = new_exp
-            
-        with open(ufile+'.tmp', 'w') as f: json.dump(users, f, indent=2)
-        os.rename(ufile+'.tmp', ufile)
-        print(f"{user}|{new_exp}")
-    else:
-        print('INVALID')
-except Exception as e:
-    print('ERROR')
+            new_exp = (dt + timedelta(days=days)).strftime('%Y-%m-%d'); users[idx]['expires'] = new_exp
+        with open(ufile+'.tmp', 'w') as f: json.dump(users, f, indent=2); os.rename(ufile+'.tmp', ufile); print(f"{user}|{new_exp}")
+    else: print('INVALID')
+except: print('ERROR')
 EOF
-)
-            if [[ "$renewed_user" == "INVALID_DATE" ]]; then
-                echo -e "\n\033[1;31mရက်စွဲ ပုံစံမှားယွင်းနေပါသည်။\033[0m"
-            elif [[ "$renewed_user" != "INVALID" && "$renewed_user" != "ERROR" && -n "$renewed_user" ]]; then
-                update_zivpn
-                user_name=$(echo "$renewed_user" | cut -d'|' -f1)
-                new_date=$(echo "$renewed_user" | cut -d'|' -f2)
-                echo -e "\n\033[1;32m✅ Account '$user_name' ကို ($new_date) အထိ သက်တမ်းတိုးပြီးပါပြီ!\033[0m"
-            else
-                echo -e "\n\033[1;31mအချက်အလက် မှားယွင်းနေပါသည်။\033[0m"
-            fi
-            read -n 1 -s -r -p "Press any key to return..."
-        fi
-        ;;
-    4)
-        clear
-        echo -e "\E[44;1;37m                   ZIVPN ACCOUNT LIST                   \E[0m\n"
-        show_account_table
-        echo ""
-        read -n 1 -s -r -p "Press any key to return..."
-        ;;
-    5)
-        clear
-        echo -e "\E[44;1;37m             🌐 ZIVPN ONLINE & IP LIMIT             \E[0m\n"
-        echo -e "\033[1;36m╔════╦══════════════╦═════════════════╦════════════╗\033[0m"
-        echo -e "\033[1;36m║ \033[1;33mNO\033[1;36m ║ \033[1;33mUSERNAME\033[1;36m     ║ \033[1;33mSTATUS\033[1;36m          ║ \033[1;33mIP USAGE\033[1;36m   ║\033[0m"
-        echo -e "\033[1;36m╠════╬══════════════╬═════════════════╬════════════╣\033[0m"
-        
-        log_data=$(journalctl -u zivpn --since "10 minutes ago" 2>/dev/null)
-        
-        python3 -c "
-import json, sys
+); if [[ "$renewed_user" == "INVALID_DATE" ]]; then echo -e "\n\033[1;31mရက်စွဲ ပုံစံမှားယွင်းနေပါသည်။\033[0m"; elif [[ "$renewed_user" != "INVALID" && "$renewed_user" != "ERROR" && -n "$renewed_user" ]]; then update_zivpn; user_name=$(echo "$renewed_user" | cut -d'|' -f1); new_date=$(echo "$renewed_user" | cut -d'|' -f2); echo -e "\n\033[1;32m✅ Account '$user_name' ကို ($new_date) အထိ သက်တမ်းတိုးပြီးပါပြီ!\033[0m"; else echo -e "\n\033[1;31mအချက်အလက် မှားယွင်းနေပါသည်။\033[0m"; fi; read -n 1 -s -r -p "Press any key to return..."; fi ;;
+    4) clear; echo -e "\E[44;1;37m                   ZIVPN ACCOUNT LIST                   \E[0m\n"; python3 -c "
+import json; from datetime import datetime
+try:
+    with open('/etc/zivpn/users.json', 'r') as f: users = json.load(f)
+    total = len(users)
+except: users = []; total = 0
+print('\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m')
+print('\033[1;32m 📊 စုစုပေါင်း အကောင့်အရေအတွက် : \033[1;33m{} \033[1;32mယောက်\033[0m'.format(total))
+print('\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m')
+" ; show_account_table; echo ""; read -n 1 -s -r -p "Press any key to return..." ;;
+    5) clear; echo -e "\E[44;1;37m                   CONTACT ADMIN                    \E[0m\n"; echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; echo -e "\033[1;32m 💬 အခက်အခဲတစ်စုံတစ်ရာရှိပါက အောက်ပါ Link မှတစ်ဆင့်\n    Admin သို့ တိုက်ရိုက်ဆက်သွယ်နိုင်ပါသည်။\033[0m"; echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"; echo -e "\033[1;33m ◈ Facebook :\033[1;34m https://www.facebook.com/share/1CFG2UQzrD/\033[0m\n"; echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; read -n 1 -s -r -p "Press any key to return..." ;;
+    6) clear; echo -e "\E[41;1;37m             EXPIRED / EXPIRING TODAY LIST              \E[0m\n"; python3 -c "
+import json; from datetime import datetime
 try:
     with open('/etc/zivpn/users.json', 'r') as f: users = json.load(f)
 except: users = []
-
-log_data = sys.argv[1]
-i = 1
+expired_users = []; today = datetime.now().date()
 for u in users:
-    user = str(u.get('user', ''))
-    pwd = str(u.get('password', ''))
-    limit = int(u.get('limit', 1))
-    
-    ip_count = 0
-    if pwd.lower() in log_data.lower():
-        lines = [line for line in log_data.split('\n') if pwd.lower() in line.lower()]
-        import re
-        ips = set()
-        for line in lines:
-            match = re.search(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b', line)
-            if match: ips.add(match.group())
-        ip_count = len(ips)
-        if ip_count == 0: ip_count = 1
-
-    disp_user = user[:12]
-    if ip_count > 0:
-        if ip_count > limit:
-            print('\033[1;36m║ \033[1;35m{:02d} \033[1;36m║ \033[1;37m{:<12} \033[1;36m║ \033[1;31m⚠️ Overlimit    \033[1;36m║ \033[1;31m{}/{} IPs  \033[1;36m║\033[0m'.format(i, disp_user, ip_count, limit))
-        else:
-            print('\033[1;36m║ \033[1;35m{:02d} \033[1;36m║ \033[1;37m{:<12} \033[1;36m║ \033[1;32m🟢 Online       \033[1;36m║ \033[1;32m{}/{} IPs  \033[1;36m║\033[0m'.format(i, disp_user, ip_count, limit))
-    else:
-        print('\033[1;36m║ \033[1;35m{:02d} \033[1;36m║ \033[1;37m{:<12} \033[1;36m║ \033[0m🔴 Offline      \033[1;36m║ \033[0m0/{} IPs   \033[1;36m║\033[0m'.format(i, disp_user, limit))
-    i += 1
-" "$log_data"
-        echo -e "\033[1;36m╚════╩══════════════╩═════════════════╩════════════╝\033[0m"
-        echo ""
-        read -n 1 -s -r -p "Press any key to return..."
-        ;;
-    6)
-        clear
-        echo -e "\E[41;1;37m           🚫 ZIVPN AUTO-BAN LOGS           \E[0m\n"
-        if [ -s "/var/log/zivpn_ban.log" ]; then
-            echo -e "\033[1;33m$(tail -n 15 /var/log/zivpn_ban.log)\033[0m"
-        else
-            echo -e "\033[1;32m✅ လတ်တလော ခိုးသုံးသူ (Overlimit) မရှိသေးပါ။\033[0m"
-        fi
-        echo ""
-        read -n 1 -s -r -p "Press any key to return..."
-        ;;
-    7)
-        clear
-        echo -e "\E[45;1;37m           📝 ပြင်ဆင်မည်: DOMAIN           \E[0m\n"
-        echo -e "\033[1;33mလက်ရှိ Domain:\033[1;37m $HOST_DOMAIN\033[0m\n"
-        read -p "➔ Domain အသစ်ရိုက်ထည့်ပါ (ဥပမာ dtac.com): " new_domain
-        if [[ -n "$new_domain" ]]; then
-            echo "$new_domain" | tr -d ' ' > /etc/domain
-            echo -e "\n\033[1;32m✅ Domain အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ!\033[0m"
-        fi
-        sleep 2
-        ;;
-    0)
-        clear
-        exit 0
-        ;;
-    *)
-        echo -e "\n\033[1;31mမှားယွင်းနေပါသည်။ ပြန်ရွေးပါ။\033[0m"
-        sleep 1
-        ;;
+    exp = u.get('expires', '')
+    if exp:
+        try:
+            exp_date = datetime.strptime(exp.strip(), '%Y-%m-%d').date()
+            if exp_date <= today: expired_users.append((u.get('user', ''), exp, exp_date))
+        except: pass
+total = len(expired_users)
+print('\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m')
+print('\033[1;31m 🔴 သက်တမ်းကုန်/လွန် စုစုပေါင်း : \033[1;33m{} \033[1;31mယောက်\033[0m'.format(total))
+print('\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m')
+print('\033[1;33m{:<3}| {:<15} | {:<12} | {}\033[0m'.format('NO', 'USERNAME', 'EXPIRES', 'STATUS'))
+print('\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m')
+if not expired_users: print('\033[1;32m   ယနေ့ကုန်မည့် (သို့) သက်တမ်းလွန်နေသော အကောင့်မရှိပါ။\033[0m')
+else:
+    for i, (user, exp, exp_date) in enumerate(expired_users, 1):
+        if exp_date < today: print('\033[1;35m{:02d} \033[1;36m|\033[1;31m {:<15} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[1;31m 🔴 သက်တမ်းလွန်\033[0m'.format(i, user[:15], exp))
+        else: print('\033[1;35m{:02d} \033[1;36m|\033[1;33m {:<15} \033[1;36m|\033[1;37m {:<12} \033[1;36m|\033[1;33m ⚠️ ယနေ့ကုန်မည်\033[0m'.format(i, user[:15], exp))
+print('\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m')
+"; echo ""; read -n 1 -s -r -p "Press any key to return..." ;;
+    0) clear; exit 0 ;;
+    *) echo -e "\n\033[1;31mမှားယွင်းနေပါသည်။ ပြန်ရွေးပါ။\033[0m"; sleep 1 ;;
 esac
 done
