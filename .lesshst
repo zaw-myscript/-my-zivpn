@@ -1,12 +1,12 @@
 #!/bin/bash
-# ZIVPN UDP Server + CLI Menu + Anti-Drop Network Optimization + DNS (No Auto-Kick)
+# ZIVPN UDP Server + CLI Menu + Anti-Drop Network Optimization + DNS + AUTO CLEAN EXPIRED
 set -euo pipefail
 
 B="\e[1;34m"; G="\e[1;32m"; Y="\e[1;33m"; R="\e[1;31m"; C="\e[1;36m"; Z="\e[0m"
 LINE="${B}────────────────────────────────────────────────────────${Z}"
 say(){ 
     echo -e "\n$LINE"
-    echo -e "${G}ZIVPN UDP Server + Anti-Drop Optimization + ZAWDNS${Z}"
+    echo -e "${G}ZIVPN UDP Server + Anti-Drop Optimization + ZAWDNS + Auto Clean${Z}"
     echo -e "$LINE\n"
 }
 say 
@@ -218,7 +218,43 @@ done
 EOF
 chmod +x /usr/local/bin/zawdns
 
-# 🔴 AUTO-DETECT: SSH Script အဟောင်းရှိ/မရှိ အလိုလို စစ်ဆေးပေးမည့်စနစ် 🔴
+# 🔴 AUTO EXPIRE DELETE (နောက်ကွယ်ကနေ ည ၁၂ နာရီတိုင်း အလိုလို အလုပ်လုပ်မည့် စနစ်) 🔴
+echo -e "${Y}🧹 Auto-Delete (သက်တမ်းလွန် အကောင့်ဖျက်စနစ်) ထည့်သွင်းနေပါသည်...${Z}"
+cat > /usr/local/bin/zivpn_cleaner << 'EOF'
+#!/bin/bash
+python3 -c "
+import json, os, subprocess
+from datetime import datetime
+ufile = '/etc/zivpn/users.json'; cfile = '/etc/zivpn/config.json'
+try:
+    with open(ufile, 'r') as f: users = json.load(f)
+    today = datetime.now().date()
+    new_users = []; changed = False
+    for u in users:
+        exp = u.get('expires')
+        is_expired = False
+        if exp:
+            try:
+                if datetime.strptime(exp.strip(), '%Y-%m-%d').date() < today: is_expired = True
+            except: pass
+        if not is_expired: new_users.append(u)
+        else: changed = True
+    if changed:
+        with open(ufile+'.tmp', 'w') as f: json.dump(new_users, f, indent=2); os.rename(ufile+'.tmp', ufile)
+        with open(cfile, 'r') as f: cfg = json.load(f)
+        valid = set(str(u['password']) for u in new_users if u.get('password'))
+        if 'auth' not in cfg or not type(cfg['auth']) is dict: cfg['auth'] = {}
+        cfg['auth']['mode'] = 'passwords'; cfg['auth']['config'] = sorted(list(valid))
+        with open(cfile+'.tmp', 'w') as f: json.dump(cfg, f, indent=2); os.rename(cfile+'.tmp', cfile)
+        subprocess.run(['systemctl', 'restart', 'zivpn.service'])
+except: pass
+" > /dev/null 2>&1
+EOF
+chmod +x /usr/local/bin/zivpn_cleaner
+# (1 0 * * *) ဆိုသည်မှာ နေ့စဉ် ည ၁၂ နာရီ ၀၁ မိနစ် တိုင်း ဤစနစ် အလုပ်လုပ်မည်ကို ဆိုလိုသည်။
+crontab -l 2>/dev/null | grep -v "zivpn_cleaner" | crontab - || true
+(crontab -l 2>/dev/null; echo "1 0 * * * /usr/local/bin/zivpn_cleaner >/dev/null 2>&1") | crontab -
+
 echo -e "${Y}📋 CLI Menu ထည့်သွင်းနေပါသည်...${Z}"
 if [ -f "/bin/menu" ] || [ -f "/usr/local/bin/menu" ]; then
     wget -qO /usr/bin/zmenu "https://raw.githubusercontent.com/zaw-myscript/-my-zivpn/main/menu"
