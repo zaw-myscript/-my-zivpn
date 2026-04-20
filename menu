@@ -1,11 +1,11 @@
 #!/bin/bash
-# ZAW ZIVPN UDP MANAGER (CLASSIC UI + CLEAN TABLES + AUTO EXPIRE DELETE)
+# ZAW ZIVPN UDP MANAGER (CLASSIC UI + CLEAN TABLES + AUTO EXPIRE DELETE FIXED)
 
 trap ' ' INT
 set +e
 
-# 🔴 သက်တမ်းလွန်အကောင့်များကို အလိုအလျောက် ရှင်းလင်းမည့်စနစ် 🔴
-clean_expired_users() {
+# Menu ဖွင့်တိုင်း အသံတိတ် စစ်ဆေးမည့်စနစ် (အကောင့်ဖျက်မှသာ Restart ချမည်)
+clean_expired_users_silent() {
    python3 -c "
 import json, os, subprocess
 from datetime import datetime
@@ -23,9 +23,12 @@ try:
             except: pass
         if not is_expired: new_users.append(u)
         else: changed = True
+
     if changed:
         with open(ufile+'.tmp', 'w') as f: json.dump(new_users, f, indent=2); os.rename(ufile+'.tmp', ufile)
-        with open(cfile, 'r') as f: cfg = json.load(f)
+        try:
+            with open(cfile, 'r') as f: cfg = json.load(f)
+        except: cfg = {}
         valid = set(str(u['password']) for u in new_users if u.get('password'))
         if 'auth' not in cfg or not type(cfg['auth']) is dict: cfg['auth'] = {}
         cfg['auth']['mode'] = 'passwords'; cfg['auth']['config'] = sorted(list(valid))
@@ -35,8 +38,22 @@ except: pass
 " > /dev/null 2>&1
 }
 
+# အကောင့်အသစ်လုပ်/ပြင်/ဖျက် တိုင်း ဆာဗာကို အတိအကျ Update လုပ်မည့်စနစ်
 update_zivpn() {
-   clean_expired_users
+   python3 -c "
+import json, os
+ufile = '/etc/zivpn/users.json'; cfile = '/etc/zivpn/config.json'
+try:
+    with open(ufile, 'r') as f: users = json.load(f)
+except: users = []
+try:
+    with open(cfile, 'r') as f: cfg = json.load(f)
+except: cfg = {}
+valid = set(str(u['password']) for u in users if u.get('password'))
+if 'auth' not in cfg or not type(cfg['auth']) is dict: cfg['auth'] = {}
+cfg['auth']['mode'] = 'passwords'; cfg['auth']['config'] = sorted(list(valid))
+with open(cfile+'.tmp', 'w') as f: json.dump(cfg, f, indent=2); os.rename(cfile+'.tmp', cfile)
+" > /dev/null 2>&1
    systemctl restart zivpn.service > /dev/null 2>&1
 }
 
@@ -88,14 +105,12 @@ print('\033[1;36m╚════╩══════════════╩
 "
 }
 
-# နောက်ကွယ်က Limit cron job များရှိပါက ဖြုတ်ပစ်မည်
 systemctl stop zlimit 2>/dev/null
 systemctl disable zlimit 2>/dev/null
 rm -f /usr/bin/zlimit /etc/systemd/system/zlimit.service
 
 while true; do
-# Menu ကိုဖွင့်တိုင်း Expired အကောင့်များကို အရင်ရှင်းလင်းမည်
-clean_expired_users
+clean_expired_users_silent
 
 stats=$(python3 -c "
 import json
